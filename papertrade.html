@@ -1,0 +1,1697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>PaperTrade — AI Day Trading</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  /* ── THEME: WARM GRAY / OFF-WHITE (default) ~#FAFAFA ── */
+  :root {
+    --bg: #FAFAFA;
+    --bg2: #F4F4F4;
+    --bg3: #EBEBEB;
+    --bg4: #DCDCDC;
+    --border: rgba(0,0,0,0.07);
+    --border2: rgba(0,0,0,0.13);
+    --text: #111111;
+    --text2: #555555;
+    --text3: #999999;
+    --green: #1a7a4a;
+    --green-dim: rgba(26,122,74,0.1);
+    --green-dim2: rgba(26,122,74,0.05);
+    --red: #c0243a;
+    --red-dim: rgba(192,36,58,0.1);
+    --red-dim2: rgba(192,36,58,0.05);
+    --amber: #a05f00;
+    --amber-dim: rgba(160,95,0,0.1);
+    --blue: #1558b0;
+    --blue-dim: rgba(21,88,176,0.1);
+    --accent: #3d35c8;
+    --accent-dim: rgba(61,53,200,0.1);
+    --font-display: 'Syne', sans-serif;
+    --font-mono: 'Space Mono', monospace;
+    --radius: 10px;
+    --radius-lg: 14px;
+    --chart-grid: rgba(0,0,0,0.05);
+    --chart-tick: #999999;
+    --chart-tooltip-bg: #FAFAFA;
+    --chart-tooltip-title: #555555;
+    --chart-tooltip-body: #111111;
+    --chart-tooltip-border: rgba(0,0,0,0.09);
+    --logo-accent: #1a7a4a;
+    --cash-pill-text: #1a7a4a;
+    --cash-pill-bg: rgba(26,122,74,0.08);
+    --cash-pill-border: rgba(26,122,74,0.22);
+    --modal-bg-color: #FAFAFA;
+    --nav-bg: #F4F4F4;
+    --tabbar-bg: #F4F4F4;
+  }
+
+  /* ── THEME: SOFT COOL GRAY ~#F0F2F5 ── */
+  [data-theme="coolgray"] {
+    --bg: #F5F5F5;
+    --bg2: #ECEFF1;
+    --bg3: #E2E6EA;
+    --bg4: #CFD5DC;
+    --border: rgba(0,0,0,0.08);
+    --border2: rgba(0,0,0,0.14);
+    --text: #0D1117;
+    --text2: #4A5568;
+    --text3: #8A96A8;
+    --green: #156f45;
+    --green-dim: rgba(21,111,69,0.11);
+    --green-dim2: rgba(21,111,69,0.05);
+    --red: #b82238;
+    --red-dim: rgba(184,34,56,0.1);
+    --red-dim2: rgba(184,34,56,0.05);
+    --amber: #935900;
+    --amber-dim: rgba(147,89,0,0.1);
+    --blue: #1251a3;
+    --blue-dim: rgba(18,81,163,0.1);
+    --accent: #3730a3;
+    --accent-dim: rgba(55,48,163,0.1);
+    --chart-grid: rgba(0,0,0,0.05);
+    --chart-tick: #8A96A8;
+    --chart-tooltip-bg: #F5F5F5;
+    --chart-tooltip-title: #4A5568;
+    --chart-tooltip-body: #0D1117;
+    --chart-tooltip-border: rgba(0,0,0,0.1);
+    --logo-accent: #156f45;
+    --cash-pill-text: #156f45;
+    --cash-pill-bg: rgba(21,111,69,0.09);
+    --cash-pill-border: rgba(21,111,69,0.22);
+    --modal-bg-color: #F5F5F5;
+    --nav-bg: #ECEFF1;
+    --tabbar-bg: #ECEFF1;
+  }
+
+  /* ── THEME: CREAM / PAPER BEIGE ~#FDFBF7 ── */
+  [data-theme="cream"] {
+    --bg: #FDFBF7;
+    --bg2: #F5F1EA;
+    --bg3: #EDE8DE;
+    --bg4: #DEDAD0;
+    --border: rgba(80,60,20,0.09);
+    --border2: rgba(80,60,20,0.16);
+    --text: #1A1410;
+    --text2: #5C5040;
+    --text3: #9A8E7A;
+    --green: #256640;
+    --green-dim: rgba(37,102,64,0.1);
+    --green-dim2: rgba(37,102,64,0.05);
+    --red: #b83030;
+    --red-dim: rgba(184,48,48,0.1);
+    --red-dim2: rgba(184,48,48,0.05);
+    --amber: #8c5c00;
+    --amber-dim: rgba(140,92,0,0.1);
+    --blue: #1a4f8a;
+    --blue-dim: rgba(26,79,138,0.1);
+    --accent: #5a3fa0;
+    --accent-dim: rgba(90,63,160,0.1);
+    --chart-grid: rgba(80,60,20,0.06);
+    --chart-tick: #9A8E7A;
+    --chart-tooltip-bg: #FDFBF7;
+    --chart-tooltip-title: #5C5040;
+    --chart-tooltip-body: #1A1410;
+    --chart-tooltip-border: rgba(80,60,20,0.1);
+    --logo-accent: #256640;
+    --cash-pill-text: #256640;
+    --cash-pill-bg: rgba(37,102,64,0.09);
+    --cash-pill-border: rgba(37,102,64,0.22);
+    --modal-bg-color: #FDFBF7;
+    --nav-bg: #F5F1EA;
+    --tabbar-bg: #F5F1EA;
+  }
+
+  /* ── THEME: DARK NEAR-BLACK ~#121212 ── */
+  [data-theme="dark"] {
+    --bg: #111111;
+    --bg2: #1A1A1A;
+    --bg3: #222222;
+    --bg4: #2E2E2E;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #EDEDED;
+    --text2: #888888;
+    --text3: #505050;
+    --green: #22d47a;
+    --green-dim: rgba(34,212,122,0.12);
+    --green-dim2: rgba(34,212,122,0.06);
+    --red: #ff4d6a;
+    --red-dim: rgba(255,77,106,0.12);
+    --red-dim2: rgba(255,77,106,0.06);
+    --amber: #f5a623;
+    --amber-dim: rgba(245,166,35,0.12);
+    --blue: #4a9eff;
+    --blue-dim: rgba(74,158,255,0.12);
+    --accent: #7c6fff;
+    --accent-dim: rgba(124,111,255,0.14);
+    --chart-grid: rgba(255,255,255,0.05);
+    --chart-tick: #505050;
+    --chart-tooltip-bg: #1A1A1A;
+    --chart-tooltip-title: #888888;
+    --chart-tooltip-body: #EDEDED;
+    --chart-tooltip-border: rgba(255,255,255,0.1);
+    --logo-accent: #22d47a;
+    --cash-pill-text: #22d47a;
+    --cash-pill-bg: rgba(34,212,122,0.07);
+    --cash-pill-border: rgba(34,212,122,0.2);
+    --modal-bg-color: #1A1A1A;
+    --nav-bg: #111111;
+    --tabbar-bg: #111111;
+  }
+
+  /* ── THEME: WARM NEUTRAL / OATMEAL ~#F2EDE8 (2026 trend) ── */
+  [data-theme="oatmeal"] {
+    --bg: #F2EDE8;
+    --bg2: #EAE3DB;
+    --bg3: #DED5C9;
+    --bg4: #CEC3B5;
+    --border: rgba(90,65,40,0.1);
+    --border2: rgba(90,65,40,0.18);
+    --text: #1C1510;
+    --text2: #6B5A48;
+    --text3: #A8937E;
+    --green: #3a6e48;
+    --green-dim: rgba(58,110,72,0.12);
+    --green-dim2: rgba(58,110,72,0.06);
+    --red: #b53535;
+    --red-dim: rgba(181,53,53,0.11);
+    --red-dim2: rgba(181,53,53,0.05);
+    --amber: #8a5500;
+    --amber-dim: rgba(138,85,0,0.11);
+    --blue: #2a538c;
+    --blue-dim: rgba(42,83,140,0.11);
+    --accent: #6b4fa8;
+    --accent-dim: rgba(107,79,168,0.11);
+    --chart-grid: rgba(90,65,40,0.07);
+    --chart-tick: #A8937E;
+    --chart-tooltip-bg: #F2EDE8;
+    --chart-tooltip-title: #6B5A48;
+    --chart-tooltip-body: #1C1510;
+    --chart-tooltip-border: rgba(90,65,40,0.12);
+    --logo-accent: #3a6e48;
+    --cash-pill-text: #3a6e48;
+    --cash-pill-bg: rgba(58,110,72,0.1);
+    --cash-pill-border: rgba(58,110,72,0.24);
+    --modal-bg-color: #F2EDE8;
+    --nav-bg: #EAE3DB;
+    --tabbar-bg: #EAE3DB;
+  }
+
+  /* ── THEME SWITCHER UI ── */
+  .theme-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2.5px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s;
+    flex-shrink: 0;
+  }
+  .theme-btn:hover { transform: scale(1.12); }
+  .theme-btn.active { border-color: var(--accent); }
+  .theme-switcher {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 10px;
+    background: var(--bg2);
+    border-radius: 20px;
+    border: 1px solid var(--border2);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .app {
+    max-width: 420px;
+    margin: 0 auto;
+    min-height: 100vh;
+    position: relative;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* HEADER */
+  .hdr {
+    padding: 16px 16px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .logo {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+
+  .logo span {
+    color: var(--logo-accent);
+  }
+    color: var(--green);
+  }
+
+  .cash-pill {
+    font-size: 11px;
+    color: var(--cash-pill-text);
+    background: var(--cash-pill-bg);
+    border: 1px solid var(--cash-pill-border);
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-family: var(--font-mono);
+  }
+
+  /* STATS BAR */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .st {
+    background: var(--bg);
+    padding: 10px 12px;
+  }
+
+  .stl {
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+    font-family: var(--font-display);
+    font-weight: 600;
+  }
+
+  .stv {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    font-family: var(--font-mono);
+  }
+
+  .stv.pos { color: var(--green); }
+  .stv.neg { color: var(--red); }
+
+  /* TAB BAR */
+  .tabbar {
+    display: flex;
+    overflow-x: auto;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    scrollbar-width: none;
+    flex-shrink: 0;
+  }
+
+  .tabbar::-webkit-scrollbar { display: none; }
+
+  .tb {
+    padding: 11px 14px;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--text3);
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    transition: color 0.15s, border-color 0.15s;
+    flex-shrink: 0;
+  }
+
+  .tb:hover { color: var(--text2); }
+  .tb.on { color: var(--green); border-bottom-color: var(--green); }
+
+  /* SECTIONS */
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 70px;
+  }
+
+  .sec { display: none; padding: 14px 14px 0; }
+  .sec.on { display: block; }
+
+  /* CARDS */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 13px 14px;
+    margin-bottom: 9px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  .card:hover {
+    border-color: var(--border2);
+    background: var(--bg3);
+  }
+
+  .card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .csym {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.3px;
+  }
+
+  .rank {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: var(--font-mono);
+    margin-right: 4px;
+  }
+
+  .cname {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 3px;
+    font-family: var(--font-display);
+  }
+
+  .cprice {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    text-align: right;
+  }
+
+  .chg {
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-top: 4px;
+    font-family: var(--font-mono);
+  }
+
+  .chg.pos { background: var(--green-dim); color: var(--green); }
+  .chg.neg { background: var(--red-dim); color: var(--red); }
+
+  .reason {
+    font-size: 12px;
+    color: var(--text2);
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    line-height: 1.6;
+    font-family: var(--font-display);
+    font-weight: 400;
+  }
+
+  .sig-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+  }
+
+  .sig-note {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: var(--font-display);
+    flex: 1;
+    padding-right: 10px;
+    line-height: 1.4;
+  }
+
+  .pill {
+    font-size: 10px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-family: var(--font-display);
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .g-pill { background: var(--green-dim); color: var(--green); border: 1px solid var(--green-dim); }
+  .r-pill { background: var(--red-dim); color: var(--red); border: 1px solid var(--red-dim); }
+  .y-pill { background: var(--amber-dim); color: var(--amber); border: 1px solid var(--amber-dim); }
+  .b-pill { background: var(--blue-dim); color: var(--blue); border: 1px solid var(--blue-dim); }
+  .v-pill { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent-dim); }
+
+  .long-tag {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--green-dim);
+    color: var(--green);
+    margin-left: 7px;
+    font-weight: 700;
+    font-family: var(--font-display);
+  }
+
+  .short-tag {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--red-dim);
+    color: var(--red);
+    margin-left: 7px;
+    font-weight: 700;
+    font-family: var(--font-display);
+  }
+
+  /* DIVIDER */
+  .divider {
+    font-family: var(--font-display);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 14px 0 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 10px;
+  }
+
+  /* CRYPTO OI GRID */
+  .oi-grid {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+
+  .oi-cell { flex: 1; }
+
+  .oi-lbl {
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 5px;
+    font-family: var(--font-display);
+    font-weight: 600;
+  }
+
+  /* LOADER */
+  .lrow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 20px 0;
+    font-size: 12px;
+    color: var(--text3);
+    font-family: var(--font-display);
+  }
+
+  .spin {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--bg4);
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty {
+    text-align: center;
+    padding: 36px 20px;
+    font-size: 13px;
+    color: var(--text3);
+    font-family: var(--font-display);
+    line-height: 1.6;
+  }
+
+  /* DISC */
+  .disc {
+    font-size: 11px;
+    color: var(--text3);
+    line-height: 1.6;
+    padding-bottom: 4px;
+    font-family: var(--font-display);
+    border-left: 2px solid var(--bg4);
+    padding-left: 10px;
+    margin-bottom: 8px;
+  }
+
+  .rbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0 8px;
+  }
+
+  .ts { font-size: 11px; color: var(--text3); font-family: var(--font-mono); }
+
+  .rfbtn {
+    font-size: 12px;
+    color: var(--accent);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    padding: 0;
+    transition: opacity 0.15s;
+  }
+
+  .rfbtn:hover { opacity: 0.7; }
+
+  /* HOLDING BAR */
+  .hbar { height: 2px; background: var(--bg4); border-radius: 2px; margin-top: 10px; }
+  .hfill { height: 100%; border-radius: 2px; }
+
+  /* SEARCH */
+  .search-wrap { position: relative; margin-bottom: 6px; }
+
+  .search-ic {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text3);
+    font-size: 14px;
+    pointer-events: none;
+  }
+
+  .sinput {
+    width: 100%;
+    padding: 10px 14px 10px 34px;
+    font-size: 13px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border2);
+    background: var(--bg2);
+    color: var(--text);
+    outline: none;
+    font-family: var(--font-mono);
+    transition: border-color 0.15s;
+  }
+
+  .sinput:focus { border-color: var(--accent); }
+
+  .sdrop {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    display: none;
+    overflow: hidden;
+    margin-bottom: 8px;
+    margin-top: 4px;
+  }
+
+  .sdi {
+    padding: 10px 14px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--text);
+    transition: background 0.1s;
+    font-family: var(--font-mono);
+  }
+
+  .sdi:last-child { border-bottom: none; }
+  .sdi:hover { background: var(--bg4); }
+  .sdi .sym { font-weight: 700; font-family: var(--font-display); }
+  .sdi .nm { font-size: 11px; color: var(--text3); font-family: var(--font-display); }
+
+  /* MODAL */
+  .modal-bg {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: none;
+    align-items: flex-end;
+    z-index: 100;
+    backdrop-filter: blur(4px);
+  }
+
+  .modal-bg.on { display: flex; }
+
+  .modal {
+    background: var(--modal-bg-color);
+    border-radius: 20px 20px 0 0;
+    padding: 20px 16px 32px;
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+    border-top: 1px solid var(--border2);
+    max-height: 92vh;
+    overflow-y: auto;
+  }
+
+  .mhdr {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .msym-wrap { display: flex; align-items: center; gap: 8px; }
+
+  .msym {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.5px;
+  }
+
+  .mx {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid var(--border2);
+    background: var(--bg3);
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+  }
+
+  .mx:hover { background: var(--bg4); }
+
+  .mprice {
+    font-family: var(--font-mono);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+
+  .mco {
+    font-size: 12px;
+    color: var(--text3);
+    margin-bottom: 14px;
+    font-family: var(--font-display);
+  }
+
+  /* CHART */
+  .chart-range {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 10px;
+  }
+
+  .crb {
+    font-size: 11px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+    color: var(--text3);
+    font-family: var(--font-mono);
+    transition: all 0.15s;
+  }
+
+  .crb:hover { border-color: var(--border2); color: var(--text2); }
+  .crb.on { background: var(--bg4); color: var(--green); border-color: rgba(0,217,126,0.3); }
+
+  .chart-wrap {
+    position: relative;
+    width: 100%;
+    height: 160px;
+    margin-bottom: 14px;
+  }
+
+  /* TRADE TABS */
+  .ttabs {
+    display: flex;
+    background: var(--bg3);
+    border-radius: var(--radius);
+    padding: 3px;
+    margin-bottom: 14px;
+    gap: 2px;
+  }
+
+  .ttab {
+    flex: 1;
+    text-align: center;
+    padding: 8px 4px;
+    font-size: 11px;
+    cursor: pointer;
+    border-radius: 7px;
+    color: var(--text3);
+    font-family: var(--font-display);
+    font-weight: 600;
+    transition: all 0.15s;
+    letter-spacing: 0.02em;
+  }
+
+  .ttab:hover { color: var(--text2); }
+  .ttab.on { background: var(--bg4); color: var(--text); border: 1px solid var(--border2); }
+  .ttab.on.buy-tab { color: var(--green); }
+  .ttab.on.sell-tab { color: var(--red); }
+  .ttab.on.short-tab { color: var(--red); }
+  .ttab.on.cover-tab { color: var(--blue); }
+
+  /* QTY */
+  .qrow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .qlbl {
+    font-size: 12px;
+    color: var(--text2);
+    flex: 0 0 70px;
+    font-family: var(--font-display);
+    font-weight: 600;
+  }
+
+  .qctrl {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+  }
+
+  .qbtn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--border2);
+    background: var(--bg3);
+    font-size: 18px;
+    cursor: pointer;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+    flex-shrink: 0;
+  }
+
+  .qbtn:hover { background: var(--bg4); }
+
+  .qnum {
+    font-size: 22px;
+    font-weight: 700;
+    min-width: 32px;
+    text-align: center;
+    color: var(--text);
+    font-family: var(--font-mono);
+  }
+
+  /* COST ROW */
+  .crow2 {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 14px;
+  }
+
+  .clbl { font-size: 12px; color: var(--text2); font-family: var(--font-display); font-weight: 600; }
+  .cval { font-size: 15px; font-weight: 700; color: var(--text); font-family: var(--font-mono); }
+
+  /* TRADE BTN */
+  .tbtn {
+    width: 100%;
+    padding: 14px;
+    border-radius: var(--radius);
+    border: none;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: var(--font-display);
+    letter-spacing: 0.04em;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+
+  .tbtn:active { transform: scale(0.98); }
+  .tbtn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .buy-btn { background: var(--green); color: #000; }
+  .sell-btn { background: var(--red); color: #fff; }
+  .short-btn { background: var(--red); color: #fff; }
+  .cover-btn { background: var(--blue); color: #fff; }
+
+  .errmsg {
+    font-size: 12px;
+    color: var(--red);
+    text-align: center;
+    margin-top: 8px;
+    min-height: 18px;
+    font-family: var(--font-display);
+  }
+
+  /* POS INFO */
+  .pos-info {
+    background: var(--bg3);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+  }
+
+  .pir {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    font-size: 12px;
+  }
+
+  .pir:last-child { margin-bottom: 0; }
+  .pir .lbl { color: var(--text3); font-family: var(--font-display); }
+  .pir .val { font-weight: 700; font-family: var(--font-mono); color: var(--text); }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 84px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 10px 18px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    opacity: 0;
+    z-index: 200;
+    color: var(--text);
+    font-family: var(--font-display);
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+  }
+
+  .toast.on {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* NAV */
+  .nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    border-top: 1px solid var(--border);
+    background: var(--nav-bg);
+    z-index: 50;
+  }
+
+  .nit {
+    flex: 1;
+    padding: 10px 0 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .nit:hover { opacity: 0.7; }
+
+  .nic {
+    font-size: 16px;
+    margin-bottom: 3px;
+    color: var(--text3);
+  }
+
+  .nlb {
+    font-size: 9px;
+    color: var(--text3);
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .nit.on .nic { color: var(--green); }
+  .nit.on .nlb { color: var(--green); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="hdr">
+    <div class="logo">Paper<span>Trade</span></div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="theme-switcher" title="Change theme">
+        <button class="theme-btn active" id="th-warmgray" onclick="setTheme('warmgray')" title="Warm Gray (default)" style="background:#FAFAFA;box-shadow:0 0 0 1px rgba(0,0,0,0.18);"></button>
+        <button class="theme-btn" id="th-coolgray" onclick="setTheme('coolgray')" title="Soft Cool Gray" style="background:#ECEFF1;box-shadow:0 0 0 1px rgba(0,0,0,0.13);"></button>
+        <button class="theme-btn" id="th-cream" onclick="setTheme('cream')" title="Cream / Paper Beige" style="background:#FDFBF7;box-shadow:0 0 0 1px rgba(80,60,20,0.18);"></button>
+        <button class="theme-btn" id="th-dark" onclick="setTheme('dark')" title="Dark Near-Black" style="background:#111111;"></button>
+        <button class="theme-btn" id="th-oatmeal" onclick="setTheme('oatmeal')" title="Warm Oatmeal / Taupe" style="background:#F2EDE8;box-shadow:0 0 0 1px rgba(90,65,40,0.2);"></button>
+      </div>
+      <div class="cash-pill" id="cash-pill">$10,000.00</div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="st"><div class="stl">Total</div><div class="stv" id="s-total">$10,000</div></div>
+    <div class="st"><div class="stl">Longs</div><div class="stv" id="s-long">$0</div></div>
+    <div class="st"><div class="stl">Shorts</div><div class="stv" id="s-short">$0</div></div>
+    <div class="st"><div class="stl">P&amp;L</div><div class="stv" id="s-pnl">$0.00</div></div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabbar">
+    <div class="tb on" data-t="ai" onclick="sw('ai')">AI Picks</div>
+    <div class="tb" data-t="signals" onclick="sw('signals')">Signals</div>
+    <div class="tb" data-t="crypto" onclick="sw('crypto')">Crypto</div>
+    <div class="tb" data-t="market" onclick="sw('market')">Market</div>
+    <div class="tb" data-t="portfolio" onclick="sw('portfolio')">Portfolio</div>
+    <div class="tb" data-t="history" onclick="sw('history')">History</div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- AI PICKS -->
+    <div class="sec on" id="tab-ai">
+      <div class="disc">AI day-trading recommendations — top 5 buys &amp; top 5 shorts based on today's momentum. Not financial advice.</div>
+      <div class="rbar">
+        <span class="ts" id="ai-ts">—</span>
+        <button class="rfbtn" onclick="loadAIPicks()">↻ Refresh</button>
+      </div>
+      <div class="divider">Top 5 buys today <span class="g-pill pill">LONG</span></div>
+      <div id="ai-buys"><div class="lrow"><div class="spin"></div>Loading buy recommendations...</div></div>
+      <div class="divider" style="margin-top:4px;">Top 5 shorts today <span class="r-pill pill">SHORT</span></div>
+      <div id="ai-shorts"><div class="lrow"><div class="spin"></div>Loading short recommendations...</div></div>
+    </div>
+
+    <!-- SIGNALS -->
+    <div class="sec" id="tab-signals">
+      <div class="disc">AI exit analysis for your open positions based on today's price action.</div>
+      <div class="divider">Long positions — close signals <span class="g-pill pill">LONG</span></div>
+      <div id="sig-long"><div class="empty">No long positions yet.</div></div>
+      <div class="divider" style="margin-top:4px;">Short positions — buy-back signals <span class="r-pill pill">SHORT</span></div>
+      <div id="sig-short"><div class="empty">No short positions yet.</div></div>
+    </div>
+
+    <!-- CRYPTO -->
+    <div class="sec" id="tab-crypto">
+      <div class="disc">AI day-trading signals for top cryptocurrencies. Options open interest is AI-estimated from known market activity.</div>
+      <div class="rbar">
+        <span class="ts" id="crypto-ts">—</span>
+        <button class="rfbtn" onclick="loadCrypto()">↻ Refresh</button>
+      </div>
+      <div id="crypto-list"><div class="lrow"><div class="spin"></div>Fetching crypto data &amp; AI signals...</div></div>
+    </div>
+
+    <!-- MARKET -->
+    <div class="sec" id="tab-market">
+      <div class="search-wrap">
+        <span class="search-ic">⌕</span>
+        <input class="sinput" id="sinput" type="text" placeholder="Search ticker or name..." autocomplete="off"/>
+      </div>
+      <div class="sdrop" id="sdrop"></div>
+      <div id="mkt-list"><div class="lrow"><div class="spin"></div>Loading market data...</div></div>
+    </div>
+
+    <!-- PORTFOLIO -->
+    <div class="sec" id="tab-portfolio">
+      <div id="port-list"></div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="sec" id="tab-history">
+      <div id="hist-list"></div>
+    </div>
+
+  </div><!-- end content -->
+
+  <!-- MODAL -->
+  <div class="modal-bg" id="modal-bg" onclick="closeMod(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="mhdr">
+        <div class="msym-wrap">
+          <span class="msym" id="m-sym">—</span>
+          <span id="m-badge"></span>
+        </div>
+        <button class="mx" onclick="closeMod()">✕</button>
+      </div>
+      <div class="mprice" id="m-price">—</div>
+      <div class="mco" id="m-co"></div>
+
+      <div class="chart-range">
+        <button class="crb on" onclick="loadChart('1d',this)">1D</button>
+        <button class="crb" onclick="loadChart('5d',this)">5D</button>
+        <button class="crb" onclick="loadChart('1mo',this)">1M</button>
+        <button class="crb" onclick="loadChart('3mo',this)">3M</button>
+        <button class="crb" onclick="loadChart('1y',this)">1Y</button>
+      </div>
+      <div class="chart-wrap"><canvas id="price-chart"></canvas></div>
+
+      <div id="pos-info-box"></div>
+
+      <div class="ttabs">
+        <div class="ttab on buy-tab" id="t-buy" onclick="setMode('buy')">Buy Long</div>
+        <div class="ttab sell-tab" id="t-sell" onclick="setMode('sell')">Sell Long</div>
+        <div class="ttab short-tab" id="t-short" onclick="setMode('short')">Short</div>
+        <div class="ttab cover-tab" id="t-cover" onclick="setMode('cover')">Cover</div>
+      </div>
+
+      <div class="qrow">
+        <span class="qlbl">Shares</span>
+        <div class="qctrl">
+          <button class="qbtn" onclick="dq(-1)">−</button>
+          <span class="qnum" id="qty-d">1</span>
+          <button class="qbtn" onclick="dq(1)">+</button>
+        </div>
+      </div>
+
+      <div class="crow2">
+        <span class="clbl" id="c-lbl">Total cost</span>
+        <span class="cval" id="c-val">$0.00</span>
+      </div>
+
+      <button class="tbtn buy-btn" id="exec-btn" onclick="exec()">Buy Long</button>
+      <div class="errmsg" id="errmsg"></div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="nit on" onclick="sw('ai')">
+      <div class="nic">★</div>
+      <div class="nlb">AI Picks</div>
+    </div>
+    <div class="nit" onclick="sw('crypto')">
+      <div class="nic">◈</div>
+      <div class="nlb">Crypto</div>
+    </div>
+    <div class="nit" onclick="sw('market')">
+      <div class="nic">▦</div>
+      <div class="nlb">Market</div>
+    </div>
+    <div class="nit" onclick="sw('portfolio')">
+      <div class="nic">◆</div>
+      <div class="nlb">Portfolio</div>
+    </div>
+    <div class="nit" onclick="sw('history')">
+      <div class="nic">↺</div>
+      <div class="nlb">History</div>
+    </div>
+  </nav>
+
+</div><!-- end app -->
+
+<script>
+const STOCKS = [
+  {sym:'AAPL',name:'Apple Inc.'},{sym:'MSFT',name:'Microsoft Corp.'},{sym:'GOOGL',name:'Alphabet Inc.'},
+  {sym:'AMZN',name:'Amazon.com'},{sym:'TSLA',name:'Tesla Inc.'},{sym:'NVDA',name:'NVIDIA Corp.'},
+  {sym:'META',name:'Meta Platforms'},{sym:'NFLX',name:'Netflix Inc.'},{sym:'AMD',name:'AMD Inc.'},
+  {sym:'INTC',name:'Intel Corp.'},{sym:'JPM',name:'JPMorgan Chase'},{sym:'V',name:'Visa Inc.'},
+  {sym:'DIS',name:'Walt Disney Co.'},{sym:'SPOT',name:'Spotify'},{sym:'CRM',name:'Salesforce'},
+  {sym:'PYPL',name:'PayPal'},{sym:'UBER',name:'Uber Technologies'},{sym:'COIN',name:'Coinbase'},
+  {sym:'PLTR',name:'Palantir Technologies'},{sym:'BABA',name:'Alibaba Group'},
+];
+
+const CRYPTOS = [
+  {sym:'BTC-USD',name:'Bitcoin',ticker:'BTC'},
+  {sym:'ETH-USD',name:'Ethereum',ticker:'ETH'},
+  {sym:'SOL-USD',name:'Solana',ticker:'SOL'},
+  {sym:'BNB-USD',name:'BNB',ticker:'BNB'},
+  {sym:'XRP-USD',name:'XRP',ticker:'XRP'},
+  {sym:'DOGE-USD',name:'Dogecoin',ticker:'DOGE'},
+  {sym:'ADA-USD',name:'Cardano',ticker:'ADA'},
+  {sym:'AVAX-USD',name:'Avalanche',ticker:'AVAX'},
+  {sym:'LINK-USD',name:'Chainlink',ticker:'LINK'},
+  {sym:'DOT-USD',name:'Polkadot',ticker:'DOT'},
+];
+
+const UNIVERSE = [...STOCKS, ...CRYPTOS];
+
+let prices = {}, cash = 10000, longs = {}, shortPos = {}, tradeHistory = [];
+let buyRecs = [], shortRecs = [], cryptoRecs = [];
+let curSym = null, mode = 'buy', qty = 1, curTab = 'ai', chartInst = null;
+
+const PROXY = 'https://corsproxy.io/?';
+const YF = 'https://query1.finance.yahoo.com/v8/finance/chart/';
+
+// ─── DATA FETCHING ─────────────────────────────────────────
+async function fp(sym, range = '1d', interval = '5m') {
+  try {
+    const url = `${YF}${sym}?interval=${interval}&range=${range}`;
+    const r = await fetch(PROXY + encodeURIComponent(url));
+    const d = await r.json();
+    const res = d?.chart?.result?.[0];
+    if (!res) return null;
+    const price = res.meta.regularMarketPrice;
+    const prev = res.meta.chartPreviousClose || res.meta.previousClose || price;
+    return {
+      price, prev,
+      change: price - prev,
+      pct: ((price - prev) / prev) * 100,
+      timestamps: res.timestamp || [],
+      closes: res.indicators?.quote?.[0]?.close || []
+    };
+  } catch { return null; }
+}
+
+async function fetchAll() {
+  await Promise.all(STOCKS.map(async s => {
+    const p = await fp(s.sym);
+    if (p) prices[s.sym] = p;
+  }));
+}
+
+async function fetchCryptoPrices() {
+  await Promise.all(CRYPTOS.map(async c => {
+    const p = await fp(c.sym);
+    if (p) prices[c.sym] = p;
+  }));
+}
+
+// ─── AI ────────────────────────────────────────────────────
+const ANTHROPIC_KEY = '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';
+
+async function callAI(prompt, maxTokens = 1500) {
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': ANTHROPIC_KEY,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: maxTokens,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  const d = await r.json();
+  if (d.error) throw new Error(d.error.message);
+  return d.content?.map(c => c.text || '').join('');
+}
+
+function priceCtx(list) {
+  return list.map(s => {
+    const key = s.ticker ? s.sym : s.sym;
+    const p = prices[key];
+    const label = s.ticker || s.sym;
+    return p ? `${label}: $${p.price.toFixed(2)} ${p.pct >= 0 ? '+' : ''}${p.pct.toFixed(2)}%` : `${label}: N/A`;
+  }).join('\n');
+}
+
+async function loadAIPicks() {
+  document.getElementById('ai-buys').innerHTML = '<div class="lrow"><div class="spin"></div>Analysing buy opportunities...</div>';
+  document.getElementById('ai-shorts').innerHTML = '<div class="lrow"><div class="spin"></div>Analysing short opportunities...</div>';
+  if (Object.keys(prices).length < 4) await fetchAll();
+  const ctx = priceCtx(STOCKS);
+  const today = new Date().toDateString();
+  const prompt = `Today is ${today}. Stock prices and daily changes:\n${ctx}\n\nYou are a quantitative day-trading analyst. Identify exactly:\n1. The TOP 5 stocks to BUY today (best upside momentum, trend, catalyst)\n2. The TOP 5 stocks to SHORT/SELL today (clearest bearish signals)\n\nLimit each list to exactly 5. Reply ONLY with this exact JSON (no markdown fences):\n{"buys":[{"sym":"AAPL","reason":"2 sentences max","exit":"specific price target or condition to close today","confidence":"High|Medium|Low"}],"shorts":[{"sym":"TSLA","reason":"2 sentences max","cover":"specific condition to buy back/cover","confidence":"High|Medium|Low"}]}`;
+  try {
+    const raw = await callAI(prompt);
+    const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
+    buyRecs = (parsed.buys || []).slice(0, 5);
+    shortRecs = (parsed.shorts || []).slice(0, 5);
+    renderAIBuys();
+    renderAIShorts();
+    document.getElementById('ai-ts').textContent = 'Updated ' + new Date().toLocaleTimeString();
+  } catch {
+    document.getElementById('ai-buys').innerHTML = '<div class="empty">Could not load recommendations.<br>Check your connection and refresh.</div>';
+    document.getElementById('ai-shorts').innerHTML = '<div class="empty">Could not load recommendations.</div>';
+  }
+}
+
+function renderAIBuys() {
+  const el = document.getElementById('ai-buys');
+  if (!buyRecs.length) { el.innerHTML = '<div class="empty">No data.</div>'; return; }
+  el.innerHTML = buyRecs.map((r, i) => {
+    const p = prices[r.sym];
+    const ps = p ? fmtPrice(p.price, r.sym) : 'N/A';
+    const pct = p ? ((p.pct >= 0 ? '+' : '') + p.pct.toFixed(2) + '%') : '';
+    const pc = p ? (p.pct >= 0 ? 'pos' : 'neg') : '';
+    const cc = r.confidence === 'High' ? 'g-pill' : r.confidence === 'Medium' ? 'y-pill' : 'b-pill';
+    return `<div class="card" onclick="openMod('${r.sym}')">
+      <div class="card-row">
+        <div><div class="csym"><span class="rank">#${i+1}</span>${r.sym}</div><div class="cname">${getName(r.sym)}</div></div>
+        <div class="cprice">${ps}${pct ? `<br><span class="chg ${pc}">${pct}</span>` : ''}</div>
+      </div>
+      <div class="reason">${r.reason}</div>
+      <div class="sig-row"><span class="sig-note">Exit: ${r.exit || '—'}</span><span class="pill ${cc}">${r.confidence}</span></div>
+    </div>`;
+  }).join('');
+}
+
+function renderAIShorts() {
+  const el = document.getElementById('ai-shorts');
+  if (!shortRecs.length) { el.innerHTML = '<div class="empty">No data.</div>'; return; }
+  el.innerHTML = shortRecs.map((r, i) => {
+    const p = prices[r.sym];
+    const ps = p ? fmtPrice(p.price, r.sym) : 'N/A';
+    const pct = p ? ((p.pct >= 0 ? '+' : '') + p.pct.toFixed(2) + '%') : '';
+    const pc = p ? (p.pct >= 0 ? 'pos' : 'neg') : '';
+    const cc = r.confidence === 'High' ? 'r-pill' : r.confidence === 'Medium' ? 'y-pill' : 'b-pill';
+    return `<div class="card" onclick="openMod('${r.sym}')">
+      <div class="card-row">
+        <div><div class="csym"><span class="rank">#${i+1}</span>${r.sym}</div><div class="cname">${getName(r.sym)}</div></div>
+        <div class="cprice">${ps}${pct ? `<br><span class="chg ${pc}">${pct}</span>` : ''}</div>
+      </div>
+      <div class="reason">${r.reason}</div>
+      <div class="sig-row"><span class="sig-note">Cover: ${r.cover || '—'}</span><span class="pill ${cc}">${r.confidence}</span></div>
+    </div>`;
+  }).join('');
+}
+
+async function loadSignals() {
+  const lo = Object.keys(longs).filter(s => longs[s] > 0);
+  const so = Object.keys(shortPos).filter(s => shortPos[s]?.qty > 0);
+  const lel = document.getElementById('sig-long');
+  const sel = document.getElementById('sig-short');
+
+  if (!lo.length) {
+    lel.innerHTML = '<div class="empty">No long positions yet.<br>Buy some stocks first.</div>';
+  } else {
+    lel.innerHTML = '<div class="lrow"><div class="spin"></div>Analysing long positions for exit signals...</div>';
+    const ctx = lo.map(s => { const p = prices[s]; return `${s}: $${p?.price?.toFixed(2)||'?'} (${p?.pct>=0?'+':''}${p?.pct?.toFixed(2)||'?'}%), ${longs[s]} shares`; }).join('\n');
+    try {
+      const raw = await callAI(`A trader holds these long positions:\n${ctx}\n\nFor EACH position, assess if today's price action suggests closing/exiting. Reply ONLY with JSON array:\n[{"sym":"AAPL","action":"CLOSE|HOLD","reason":"1 sentence","urgency":"Urgent|Monitor|Hold"}]`);
+      const sigs = JSON.parse(raw.replace(/```json|```/g, '').trim());
+      lel.innerHTML = sigs.map(r => {
+        const p = prices[r.sym]; const pct = p ? ((p.pct>=0?'+':'')+p.pct.toFixed(2)+'%') : '';
+        const pc = p ? (p.pct >= 0 ? 'pos' : 'neg') : '';
+        const ac = r.action === 'CLOSE' ? 'g-pill' : r.urgency === 'Monitor' ? 'y-pill' : 'b-pill';
+        return `<div class="card" onclick="openMod('${r.sym}')">
+          <div class="card-row"><div><div class="csym">${r.sym}<span class="long-tag">LONG</span></div><div class="cname">${longs[r.sym]} shares</div></div>
+          <div>${pct ? `<span class="chg ${pc}">${pct}</span>` : ''}</div></div>
+          <div class="reason">${r.reason}</div>
+          <div class="sig-row"><span class="pill ${ac}">${r.action === 'CLOSE' ? 'Exit now' : r.urgency}</span></div>
+        </div>`;
+      }).join('');
+    } catch { lel.innerHTML = '<div class="empty">Analysis failed. Try again.</div>'; }
+  }
+
+  if (!so.length) {
+    sel.innerHTML = '<div class="empty">No short positions yet.<br>Use AI Picks → Top Shorts to get ideas.</div>';
+  } else {
+    sel.innerHTML = '<div class="lrow"><div class="spin"></div>Analysing short positions for cover signals...</div>';
+    const ctx = so.map(s => { const p=prices[s]; const sp=shortPos[s]; const pnl=sp.qty*(sp.entryPrice-(p?.price||sp.entryPrice)); return `${s}: shorted ${sp.qty}@$${sp.entryPrice.toFixed(2)}, now $${p?.price?.toFixed(2)||'?'}, P&L $${pnl.toFixed(2)}`; }).join('\n');
+    try {
+      const raw = await callAI(`A trader has these short positions:\n${ctx}\n\nFor EACH, assess if today's action suggests covering/buying back. Reply ONLY with JSON:\n[{"sym":"TSLA","action":"COVER|HOLD","reason":"1 sentence","urgency":"Urgent|Monitor|Hold"}]`);
+      const sigs = JSON.parse(raw.replace(/```json|```/g, '').trim());
+      sel.innerHTML = sigs.map(r => {
+        const sp = shortPos[r.sym]; const p = prices[r.sym];
+        const pnl = sp ? sp.qty*(sp.entryPrice-(p?.price||sp.entryPrice)) : 0;
+        const ac = r.action === 'COVER' ? 'b-pill' : r.urgency === 'Monitor' ? 'y-pill' : 'g-pill';
+        return `<div class="card" onclick="openMod('${r.sym}')">
+          <div class="card-row"><div><div class="csym">${r.sym}<span class="short-tag">SHORT</span></div><div class="cname">${sp?.qty||0} @ $${sp?.entryPrice?.toFixed(2)||'?'}</div></div>
+          <div class="cprice" style="${pnl>=0?'color:var(--green)':'color:var(--red)'}">${pnl>=0?'+':''}$${pnl.toFixed(2)}</div></div>
+          <div class="reason">${r.reason}</div>
+          <div class="sig-row"><span class="pill ${ac}">${r.action==='COVER'?'Cover now':r.urgency}</span></div>
+        </div>`;
+      }).join('');
+    } catch { sel.innerHTML = '<div class="empty">Analysis failed. Try again.</div>'; }
+  }
+}
+
+async function loadCrypto() {
+  const el = document.getElementById('crypto-list');
+  el.innerHTML = '<div class="lrow"><div class="spin"></div>Fetching live crypto prices...</div>';
+  await fetchCryptoPrices();
+  el.innerHTML = '<div class="lrow"><div class="spin"></div>AI analysing crypto signals &amp; open interest...</div>';
+  const ctx = priceCtx(CRYPTOS);
+  const prompt = `Today is ${new Date().toDateString()}. Crypto prices and daily changes:\n${ctx}\n\nYou are a crypto day-trading analyst. For each of these 10 cryptocurrencies, provide:\n1. A day-trading BUY/SELL/HOLD recommendation\n2. 2-sentence reason focused on intraday momentum\n3. Options open interest tier estimate (BTC/ETH = Very High, SOL/BNB = High, others = Medium/Low/Very Low)\n4. Brief OI context note\n5. Confidence level\n\nReply ONLY with JSON array (no markdown):\n[{"ticker":"BTC","rec":"BUY|SELL|HOLD","reason":"2 sentences","oi_tier":"Very High|High|Medium|Low|Very Low","oi_note":"brief context","confidence":"High|Medium|Low"}]`;
+  try {
+    const raw = await callAI(prompt);
+    cryptoRecs = JSON.parse(raw.replace(/```json|```/g, '').trim());
+    renderCrypto();
+    document.getElementById('crypto-ts').textContent = 'Updated ' + new Date().toLocaleTimeString();
+  } catch {
+    el.innerHTML = '<div class="empty">Could not load crypto analysis.<br>Check your connection and refresh.</div>';
+  }
+}
+
+function renderCrypto() {
+  const el = document.getElementById('crypto-list');
+  if (!cryptoRecs.length) { el.innerHTML = '<div class="empty">No data.</div>'; return; }
+  el.innerHTML = cryptoRecs.map(c => {
+    const crypto = CRYPTOS.find(x => x.ticker === c.ticker);
+    const p = crypto ? prices[crypto.sym] : null;
+    const ps = p ? fmtPrice(p.price, crypto?.sym) : 'N/A';
+    const pct = p ? ((p.pct >= 0 ? '+' : '') + p.pct.toFixed(2) + '%') : '';
+    const pc = p ? (p.pct >= 0 ? 'pos' : 'neg') : '';
+    const recCls = c.rec === 'BUY' ? 'g-pill' : c.rec === 'SELL' ? 'r-pill' : 'y-pill';
+    const oiCls = (c.oi_tier === 'Very High' || c.oi_tier === 'High') ? 'g-pill' : c.oi_tier === 'Medium' ? 'y-pill' : 'b-pill';
+    const confCls = c.confidence === 'High' ? 'g-pill' : c.confidence === 'Medium' ? 'y-pill' : 'r-pill';
+    return `<div class="card" onclick="${crypto ? `openMod('${crypto.sym}')` : 'void 0'}">
+      <div class="card-row">
+        <div><div class="csym">${c.ticker}</div><div class="cname">${crypto?.name || c.ticker}</div></div>
+        <div class="cprice">${ps}${pct ? `<br><span class="chg ${pc}">${pct}</span>` : ''}</div>
+      </div>
+      <div class="oi-grid">
+        <div class="oi-cell"><div class="oi-lbl">Signal</div><span class="pill ${recCls}">${c.rec}</span></div>
+        <div class="oi-cell"><div class="oi-lbl">OI Tier</div><span class="pill ${oiCls}">${c.oi_tier}</span></div>
+        <div class="oi-cell"><div class="oi-lbl">Confidence</div><span class="pill ${confCls}">${c.confidence}</span></div>
+      </div>
+      <div class="reason">${c.reason}</div>
+      ${c.oi_note ? `<div style="font-size:11px;color:var(--text3);margin-top:6px;font-family:var(--font-display);">${c.oi_note}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function renderMarket() {
+  const el = document.getElementById('mkt-list');
+  const available = STOCKS.filter(s => prices[s.sym]);
+  if (!available.length) { el.innerHTML = '<div class="empty">Loading market data...</div>'; return; }
+  el.innerHTML = available.map(s => {
+    const p = prices[s.sym];
+    return `<div class="card" onclick="openMod('${s.sym}')">
+      <div class="card-row">
+        <div><div class="csym">${s.sym}</div><div class="cname">${s.name}</div></div>
+        <div class="cprice">${fmtPrice(p.price, s.sym)}<br><span class="chg ${p.pct >= 0 ? 'pos' : 'neg'}">${p.pct >= 0 ? '+' : ''}${p.pct.toFixed(2)}%</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderPortfolio() {
+  const el = document.getElementById('port-list');
+  const lo = Object.keys(longs).filter(s => longs[s] > 0);
+  const so = Object.keys(shortPos).filter(s => shortPos[s]?.qty > 0);
+  if (!lo.length && !so.length) { el.innerHTML = '<div class="empty">No open positions yet.<br>Head to AI Picks to get started.</div>'; return; }
+  const totalLong = lo.reduce((a, s) => a + (prices[s]?.price || 0) * longs[s], 0);
+  let html = '';
+  if (lo.length) {
+    html += '<div class="divider">Long positions <span class="g-pill pill">LONG</span></div>';
+    lo.forEach(s => {
+      const p = prices[s]; const val = (p?.price || 0) * longs[s];
+      const bar = totalLong > 0 ? Math.round((val / totalLong) * 100) : 0;
+      const pct = p ? ((p.pct >= 0 ? '+' : '') + p.pct.toFixed(2) + '%') : '';
+      html += `<div class="card" onclick="openMod('${s}')">
+        <div class="card-row">
+          <div><div class="csym">${s}<span class="long-tag">LONG</span></div><div class="cname">${longs[s]} shares</div></div>
+          <div class="cprice">${fmtPrice(val, s)}${pct ? `<br><span class="chg ${p.pct>=0?'pos':'neg'}">${pct}</span>` : ''}</div>
+        </div>
+        <div class="hbar"><div class="hfill" style="width:${bar}%;background:var(--green);"></div></div>
+      </div>`;
+    });
+  }
+  if (so.length) {
+    html += '<div class="divider" style="margin-top:8px;">Short positions <span class="r-pill pill">SHORT</span></div>';
+    so.forEach(s => {
+      const p = prices[s]; const sp = shortPos[s];
+      const pnl = sp.qty * (sp.entryPrice - (p?.price || sp.entryPrice));
+      html += `<div class="card" onclick="openMod('${s}')">
+        <div class="card-row">
+          <div><div class="csym">${s}<span class="short-tag">SHORT</span></div><div class="cname">${sp.qty} shares @ $${sp.entryPrice.toFixed(2)}</div></div>
+          <div class="cprice" style="${pnl>=0?'color:var(--green)':'color:var(--red)'}">${pnl>=0?'+':''}$${pnl.toFixed(2)}</div>
+        </div>
+      </div>`;
+    });
+  }
+  el.innerHTML = html;
+}
+
+function renderHistory() {
+  const el = document.getElementById('hist-list');
+  if (!tradeHistory.length) { el.innerHTML = '<div class="empty">No trades yet.</div>'; return; }
+  const labels = { buy: 'LONG', sell: 'SELL', short: 'SHORT', cover: 'COVER' };
+  const tagFn = t => t === 'short' ? 'short-tag' : t === 'buy' ? 'long-tag' : '';
+  el.innerHTML = [...tradeHistory].reverse().map(t => `
+    <div class="card">
+      <div class="card-row">
+        <div>
+          <div class="csym">${t.sym.replace('-USD','')}<span class="${tagFn(t.type)}" style="margin-left:7px;font-size:10px;padding:2px 6px;border-radius:4px;">${labels[t.type]||t.type}</span></div>
+          <div class="cname">${t.date} · ${t.qty} shares @ $${t.price.toFixed(2)}</div>
+        </div>
+        <div class="cprice">$${t.total.toFixed(2)}</div>
+      </div>
+    </div>`).join('');
+}
+
+function updateStats() {
+  const lv = Object.keys(longs).filter(s => longs[s] > 0).reduce((a, s) => a + (prices[s]?.price || 0) * longs[s], 0);
+  const sv = Object.keys(shortPos).filter(s => shortPos[s]?.qty > 0).reduce((a, s) => {
+    const sp = shortPos[s]; return a + sp.qty * (sp.entryPrice - (prices[s]?.price || sp.entryPrice));
+  }, 0);
+  const pnl = (cash + lv + sv) - 10000;
+  document.getElementById('s-total').textContent = '$' + Math.round(cash + lv).toLocaleString();
+  document.getElementById('s-long').textContent = '$' + Math.round(lv).toLocaleString();
+  document.getElementById('s-short').textContent = (sv >= 0 ? '+' : '') + '$' + Math.abs(Math.round(sv)).toLocaleString();
+  const pe = document.getElementById('s-pnl');
+  pe.textContent = (pnl >= 0 ? '+' : '') + '$' + Math.abs(pnl).toFixed(2);
+  pe.className = 'stv ' + (pnl >= 0 ? 'pos' : 'neg');
+  document.getElementById('cash-pill').textContent = '$' + cash.toFixed(2);
+}
+
+function getName(sym) { return UNIVERSE.find(x => x.sym === sym)?.name || sym; }
+
+function fmtPrice(p, sym) {
+  if (!p) return 'N/A';
+  if (sym && sym.includes('-USD')) {
+    if (p > 1000) return '$' + p.toLocaleString(undefined, { maximumFractionDigits: 0 });
+    if (p > 1) return '$' + p.toFixed(2);
+    return '$' + p.toFixed(4);
+  }
+  return '$' + p.toFixed(2);
+}
+
+// ─── TAB SWITCHING ─────────────────────────────────────────
+function sw(tab) {
+  curTab = tab;
+  document.querySelectorAll('.tb').forEach(el => el.classList.toggle('on', el.dataset.t === tab));
+  document.querySelectorAll('.sec').forEach(el => el.classList.toggle('on', el.id === 'tab-' + tab));
+  document.querySelectorAll('.nit').forEach((el, i) => {
+    el.classList.toggle('on', ['ai', 'crypto', 'market', 'portfolio', 'history'][i] === tab);
+  });
+  if (tab === 'portfolio') renderPortfolio();
+  if (tab === 'history') renderHistory();
+  if (tab === 'market') renderMarket();
+  if (tab === 'signals') loadSignals();
+  if (tab === 'crypto' && !cryptoRecs.length) loadCrypto();
+}
+
+// ─── MODAL ─────────────────────────────────────────────────
+async function openMod(sym) {
+  curSym = sym; qty = 1; mode = 'buy';
+  document.getElementById('m-sym').textContent = sym.replace('-USD', '');
+  document.getElementById('m-co').textContent = getName(sym);
+  document.getElementById('errmsg').textContent = '';
+  document.getElementById('qty-d').textContent = '1';
+  let p = prices[sym];
+  if (!p) { document.getElementById('m-price').textContent = 'Loading...'; p = await fp(sym); if (p) prices[sym] = p; }
+  if (p) document.getElementById('m-price').textContent = fmtPrice(p.price, sym);
+  updatePosBadge();
+  setMode('buy');
+  document.querySelectorAll('.crb').forEach((b, i) => b.classList.toggle('on', i === 0));
+  await loadChart('1d', document.querySelector('.crb.on'));
+  document.getElementById('modal-bg').classList.add('on');
+}
+
+function updatePosBadge() {
+  const badge = document.getElementById('m-badge');
+  const hasLong = longs[curSym] > 0;
+  const hasShort = shortPos[curSym]?.qty > 0;
+  badge.innerHTML = hasLong ? `<span class="long-tag">LONG ${longs[curSym]}</span>` : hasShort ? `<span class="short-tag">SHORT ${shortPos[curSym].qty}</span>` : '';
+  const sp = shortPos[curSym]; const p = prices[curSym]; let html = '';
+  if (hasLong) html = `<div class="pos-info"><div class="pir"><span class="lbl">Long shares</span><span class="val">${longs[curSym]}</span></div><div class="pir"><span class="lbl">Market value</span><span class="val">$${((p?.price || 0) * longs[curSym]).toFixed(2)}</span></div></div>`;
+  if (hasShort && sp) {
+    const pnl = sp.qty * (sp.entryPrice - (p?.price || sp.entryPrice));
+    html += `<div class="pos-info"><div class="pir"><span class="lbl">Short shares</span><span class="val">${sp.qty}</span></div><div class="pir"><span class="lbl">Entry price</span><span class="val">$${sp.entryPrice.toFixed(2)}</span></div><div class="pir"><span class="lbl">Unrealised P&L</span><span class="val" style="${pnl>=0?'color:var(--green)':'color:var(--red)'}">${pnl>=0?'+':''}$${pnl.toFixed(2)}</span></div></div>`;
+  }
+  document.getElementById('pos-info-box').innerHTML = html;
+}
+
+async function loadChart(range, btn) {
+  if (btn) { document.querySelectorAll('.crb').forEach(b => b.classList.remove('on')); btn.classList.add('on'); }
+  const im = { '1d': '5m', '5d': '15m', '1mo': '1d', '3mo': '1d', '1y': '1wk' };
+  const data = await fp(curSym, range, im[range] || '1d');
+  if (!data || !data.timestamps?.length) return;
+  const labels = data.timestamps.map(t => {
+    const d = new Date(t * 1000);
+    return range === '1d' ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  });
+  const closes = data.closes.map(v => v ? parseFloat(v.toFixed(4)) : null);
+  const isUp = (closes[closes.length - 1] || 0) >= (closes[0] || 0);
+  if (chartInst) { chartInst.destroy(); chartInst = null; }
+  const s = getComputedStyle(document.documentElement);
+  const gv = k => s.getPropertyValue(k).trim();
+  const upColor = gv('--green'); const dnColor = gv('--red');
+  chartInst = new Chart(document.getElementById('price-chart').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data: closes,
+        borderColor: isUp ? upColor : dnColor,
+        borderWidth: 1.5,
+        pointRadius: 0,
+        tension: 0.3,
+        fill: false,
+        spanGaps: true
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          mode: 'index', intersect: false,
+          backgroundColor: gv('--chart-tooltip-bg'),
+          titleColor: gv('--chart-tooltip-title'),
+          bodyColor: gv('--chart-tooltip-body'),
+          borderColor: gv('--chart-tooltip-border'),
+          borderWidth: 1,
+          callbacks: { label: v => '$' + (v.raw?.toFixed(2) || '') }
+        }
+      },
+      scales: {
+        x: { ticks: { maxTicksLimit: 6, color: gv('--chart-tick'), font: { size: 10, family: "'Space Mono'" } }, grid: { display: false }, border: { display: false } },
+        y: { ticks: { color: gv('--chart-tick'), font: { size: 10, family: "'Space Mono'" }, callback: v => '$' + (v > 100 ? Math.round(v) : v.toFixed(2)) }, grid: { color: gv('--chart-grid') }, border: { display: false }, position: 'right' }
+      }
+    }
+  });
+}
+
+// ─── THEME SWITCHER ────────────────────────────────────────
+function setTheme(name) {
+  const root = document.documentElement;
+  if (name === 'warmgray') { root.removeAttribute('data-theme'); }
+  else { root.setAttribute('data-theme', name); }
+  document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('th-' + name);
+  if (btn) btn.classList.add('active');
+  try { localStorage.setItem('pt-theme', name); } catch(e) {}
+  if (chartInst) {
+    const activeRangeBtn = document.querySelector('.crb.on');
+    const curRange = activeRangeBtn ? activeRangeBtn.textContent.toLowerCase() : '1d';
+    loadChart(curRange, activeRangeBtn);
+  }
+}
+
+function setMode(m) {
+  mode = m;
+  ['buy', 'sell', 'short', 'cover'].forEach(x => document.getElementById('t-' + x).classList.toggle('on', x === m));
+  const btn = document.getElementById('exec-btn');
+  btn.textContent = { buy: 'Buy Long', sell: 'Sell Long', short: 'Sell Short', cover: 'Cover Short' }[m];
+  btn.className = 'tbtn ' + { buy: 'buy-btn', sell: 'sell-btn', short: 'short-btn', cover: 'cover-btn' }[m];
+  document.getElementById('c-lbl').textContent = { buy: 'Total cost', sell: 'Proceeds', short: 'Margin (50%)', cover: 'Cost to cover' }[m];
+  document.getElementById('errmsg').textContent = '';
+  updCost();
+}
+
+function dq(d) { qty = Math.max(1, qty + d); document.getElementById('qty-d').textContent = qty; updCost(); }
+
+function updCost() {
+  const p = prices[curSym]?.price || 0;
+  document.getElementById('c-val').textContent = '$' + (p * qty).toFixed(2);
+}
+
+function exec() {
+  const p = prices[curSym]?.price; if (!p) return;
+  const total = p * qty; const sym = curSym;
+  document.getElementById('errmsg').textContent = '';
+  if (mode === 'buy') {
+    if (total > cash) { document.getElementById('errmsg').textContent = 'Insufficient cash.'; return; }
+    cash -= total; longs[sym] = (longs[sym] || 0) + qty;
+    tradeHistory.push({ sym, type: 'buy', qty, price: p, total, date: new Date().toLocaleDateString() });
+    toast('Bought ' + qty + ' ' + sym.replace('-USD', '') + ' @ $' + p.toFixed(2));
+  } else if (mode === 'sell') {
+    const own = longs[sym] || 0; if (qty > own) { document.getElementById('errmsg').textContent = 'Only ' + own + ' shares held.'; return; }
+    cash += total; longs[sym] -= qty;
+    tradeHistory.push({ sym, type: 'sell', qty, price: p, total, date: new Date().toLocaleDateString() });
+    toast('Sold ' + qty + ' ' + sym.replace('-USD', '') + ' @ $' + p.toFixed(2));
+  } else if (mode === 'short') {
+    const margin = total * 0.5; if (margin > cash) { document.getElementById('errmsg').textContent = 'Insufficient margin (50% required).'; return; }
+    cash -= margin;
+    if (!shortPos[sym] || shortPos[sym].qty === 0) { shortPos[sym] = { qty, entryPrice: p, margin }; }
+    else { const pr = shortPos[sym]; const nq = pr.qty + qty; shortPos[sym] = { qty: nq, entryPrice: (pr.entryPrice * pr.qty + p * qty) / nq, margin: pr.margin + margin }; }
+    tradeHistory.push({ sym, type: 'short', qty, price: p, total: margin, date: new Date().toLocaleDateString() });
+    toast('Shorted ' + qty + ' ' + sym.replace('-USD', '') + ' @ $' + p.toFixed(2));
+  } else if (mode === 'cover') {
+    const sp = shortPos[sym]; if (!sp || sp.qty === 0) { document.getElementById('errmsg').textContent = 'No short position.'; return; }
+    if (qty > sp.qty) { document.getElementById('errmsg').textContent = 'Only shorted ' + sp.qty + ' shares.'; return; }
+    const pnl = (sp.entryPrice - p) * qty; const mr = (sp.margin / sp.qty) * qty;
+    cash += mr + pnl - total; sp.qty -= qty; if (sp.qty === 0) shortPos[sym] = { qty: 0, entryPrice: 0, margin: 0 };
+    tradeHistory.push({ sym, type: 'cover', qty, price: p, total, date: new Date().toLocaleDateString() });
+    toast('Covered ' + qty + ' ' + sym.replace('-USD', '') + ' P&L: ' + (pnl >= 0 ? '+' : '') + '$' + pnl.toFixed(2));
+  }
+  updateStats(); updatePosBadge(); closeMod();
+}
+
+function closeMod(e) {
+  if (!e || e.target === document.getElementById('modal-bg')) {
+    document.getElementById('modal-bg').classList.remove('on');
+    if (chartInst) { chartInst.destroy(); chartInst = null; }
+  }
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('on');
+  setTimeout(() => t.classList.remove('on'), 2800);
+}
+
+// ─── SEARCH ────────────────────────────────────────────────
+const si = document.getElementById('sinput');
+const sd = document.getElementById('sdrop');
+si.addEventListener('input', () => {
+  const q = si.value.toUpperCase().trim();
+  if (!q) { sd.style.display = 'none'; return; }
+  const m = UNIVERSE.filter(s => s.sym.startsWith(q) || s.name.toUpperCase().includes(q) || (s.ticker && s.ticker.startsWith(q))).slice(0, 6);
+  if (!m.length) { sd.style.display = 'none'; return; }
+  sd.innerHTML = m.map(s => `<div class="sdi" onclick="pickS('${s.sym}')"><span class="sym">${s.ticker || s.sym}</span><span class="nm">${s.name}</span></div>`).join('');
+  sd.style.display = 'block';
+});
+document.addEventListener('click', e => { if (!e.target.closest('#sinput') && !e.target.closest('#sdrop')) sd.style.display = 'none'; });
+async function pickS(sym) { si.value = ''; sd.style.display = 'none'; openMod(sym); }
+
+// ─── INIT ──────────────────────────────────────────────────
+async function init() {
+  try {
+    const saved = localStorage.getItem('pt-theme');
+    if (saved && saved !== 'warmgray') setTheme(saved);
+  } catch(e) {}
+  fetchAll().then(() => { renderMarket(); updateStats(); });
+  loadAIPicks();
+}
+
+init();
+</script>
+</body>
+</html>
