@@ -1394,7 +1394,7 @@ function renderCrypto() {
     const recCls = c.rec === 'BUY' ? 'g-pill' : c.rec === 'SELL' ? 'r-pill' : 'y-pill';
     const oiCls = (c.oi_tier === 'Very High' || c.oi_tier === 'High') ? 'g-pill' : c.oi_tier === 'Medium' ? 'y-pill' : 'b-pill';
     const confCls = c.confidence === 'High' ? 'g-pill' : c.confidence === 'Medium' ? 'y-pill' : 'r-pill';
-    return `<div class="card" onclick="${crypto ? `openMod('${crypto.sym}')` : 'void 0'}">
+    return `<div class="card" onclick="openMod(this.dataset.sym)" data-sym="${crypto ? crypto.sym : ''}"\>
       <div class="card-row">
         <div><div class="csym">${c.ticker}</div><div class="cname">${crypto?.name || c.ticker}</div></div>
         <div class="cprice">${ps}${pct ? `<br><span class="chg ${pc}">${pct}</span>` : ''}</div>
@@ -1416,7 +1416,7 @@ function renderMarket() {
   if (!available.length) { el.innerHTML = '<div class="empty">Loading market data...</div>'; return; }
   el.innerHTML = available.map(s => {
     const p = prices[s.sym];
-    return `<div class="card" onclick="openMod('${s.sym}')">
+    return `<div class="card" onclick="openMod(this.dataset.sym)" data-sym="${s.sym}">
       <div class="card-row">
         <div><div class="csym">${s.sym}</div><div class="cname">${s.name}</div></div>
         <div class="cprice">${fmtPrice(p.price, s.sym)}<br><span class="chg ${p.pct >= 0 ? 'pos' : 'neg'}">${p.pct >= 0 ? '+' : ''}${p.pct.toFixed(2)}%</span></div>
@@ -1438,7 +1438,7 @@ function renderPortfolio() {
       const p = prices[s]; const val = (p?.price || 0) * longs[s];
       const bar = totalLong > 0 ? Math.round((val / totalLong) * 100) : 0;
       const pct = p ? ((p.pct >= 0 ? '+' : '') + p.pct.toFixed(2) + '%') : '';
-      html += `<div class="card" onclick="openMod('${s}')">
+      html += `<div class="card" onclick="openMod(this.dataset.sym)" data-sym="${s}">
         <div class="card-row">
           <div><div class="csym">${s}<span class="long-tag">LONG</span></div><div class="cname">${longs[s]} shares</div></div>
           <div class="cprice">${fmtPrice(val, s)}${pct ? `<br><span class="chg ${p.pct>=0?'pos':'neg'}">${pct}</span>` : ''}</div>
@@ -1452,7 +1452,7 @@ function renderPortfolio() {
     so.forEach(s => {
       const p = prices[s]; const sp = shortPos[s];
       const pnl = sp.qty * (sp.entryPrice - (p?.price || sp.entryPrice));
-      html += `<div class="card" onclick="openMod('${s}')">
+      html += `<div class="card" onclick="openMod(this.dataset.sym)" data-sym="${s}">
         <div class="card-row">
           <div><div class="csym">${s}<span class="short-tag">SHORT</span></div><div class="cname">${sp.qty} shares @ $${sp.entryPrice.toFixed(2)}</div></div>
           <div class="cprice" style="${pnl>=0?'color:var(--green)':'color:var(--red)'}">${pnl>=0?'+':''}$${pnl.toFixed(2)}</div>
