@@ -1243,24 +1243,30 @@ async function loadAIPicks() {
   document.getElementById('ai-shorts').innerHTML = '<div class="lrow"><div class="spin"></div>Calculating bearish signals...</div>';
   if (Object.keys(prices).length < 4) await fetchAll();
 
-  // Sort stocks by momentum (biggest gainers = buys, biggest losers = shorts)
-  const ranked = STOCKS.map(s => ({ sym: s.sym, name: s.name, data: prices[s.sym] }))
-    .filter(s => s.data)
-    .sort((a, b) => b.data.pct - a.data.pct);
+  const ranked = STOCKS.map(function(s) {
+    return { sym: s.sym, name: s.name, data: prices[s.sym] };
+  }).filter(function(s) { return s.data; })
+    .sort(function(a, b) { return b.data.pct - a.data.pct; });
 
-  buyRecs = ranked.slice(0, 5).map(s => ({
-    sym: s.sym,
-    reason: `${s.sym} is showing strong upward momentum of ${s.data.pct >= 0 ? '+' : ''}${s.data.pct.toFixed(2)}% today. Price action suggests continued buying interest.`,
-    exit: `Consider exiting if price drops more than 1.5% from current level of ${fmtPrice(s.data.price, s.sym)}`,
-    confidence: s.data.pct > 2 ? 'High' : s.data.pct > 0.5 ? 'Medium' : 'Low'
-  }));
+  buyRecs = ranked.slice(0, 5).map(function(s) {
+    const pctStr = (s.data.pct >= 0 ? '+' : '') + s.data.pct.toFixed(2) + '%';
+    return {
+      sym: s.sym,
+      reason: s.sym + ' is showing strong upward momentum of ' + pctStr + ' today. Price action suggests continued buying interest.',
+      exit: 'Consider exiting if price drops more than 1.5% from current level of ' + fmtPrice(s.data.price, s.sym),
+      confidence: s.data.pct > 2 ? 'High' : s.data.pct > 0.5 ? 'Medium' : 'Low'
+    };
+  });
 
-  shortRecs = ranked.slice(-5).reverse().map(s => ({
-    sym: s.sym,
-    reason: `${s.sym} is showing bearish momentum of ${s.data.pct >= 0 ? '+' : ''}${s.data.pct.toFixed(2)}% today. Selling pressure appears dominant.`,
-    cover: `Consider covering if price rises more than 1.5% from current level of ${fmtPrice(s.data.price, s.sym)}`,
-    confidence: s.data.pct < -2 ? 'High' : s.data.pct < -0.5 ? 'Medium' : 'Low'
-  }));
+  shortRecs = ranked.slice(-5).reverse().map(function(s) {
+    const pctStr = (s.data.pct >= 0 ? '+' : '') + s.data.pct.toFixed(2) + '%';
+    return {
+      sym: s.sym,
+      reason: s.sym + ' is showing bearish momentum of ' + pctStr + ' today. Selling pressure appears dominant.',
+      cover: 'Consider covering if price rises more than 1.5% from current level of ' + fmtPrice(s.data.price, s.sym),
+      confidence: s.data.pct < -2 ? 'High' : s.data.pct < -0.5 ? 'Medium' : 'Low'
+    };
+  });
 
   renderAIBuys();
   renderAIShorts();
@@ -1308,47 +1314,51 @@ function renderAIShorts() {
 
 async function loadSignals() {
   const lo = Object.keys(longs).filter(s => longs[s] > 0);
-  const so = Object.keys(shortPos).filter(s => shortPos[s]?.qty > 0);
+  const so = Object.keys(shortPos).filter(s => shortPos[s] && shortPos[s].qty > 0);
   const lel = document.getElementById('sig-long');
   const sel = document.getElementById('sig-short');
 
   if (!lo.length) {
     lel.innerHTML = '<div class="empty">No long positions yet.<br>Buy some stocks first.</div>';
   } else {
-    lel.innerHTML = lo.map(s => {
-      const p = prices[s]; const pct = p ? ((p.pct>=0?'+':'')+p.pct.toFixed(2)+'%') : '';
+    lel.innerHTML = lo.map(function(s) {
+      const p = prices[s];
+      const pct = p ? ((p.pct>=0?'+':'')+p.pct.toFixed(2)+'%') : '';
       const pc = p ? (p.pct >= 0 ? 'pos' : 'neg') : '';
       const action = p && p.pct < -1.5 ? 'CLOSE' : 'HOLD';
       const ac = action === 'CLOSE' ? 'g-pill' : 'b-pill';
       const reason = action === 'CLOSE'
-        ? `${s} is down ${pct} today — momentum suggests considering an exit.`
-        : `${s} is ${pct} today — position looks stable, monitor closely.`;
-      return \`<div class="card" onclick="openMod('\${s}')">
-        <div class="card-row"><div><div class="csym">\${s}<span class="long-tag">LONG</span></div><div class="cname">\${longs[s]} shares</div></div>
-        <div>\${pct ? \`<span class="chg \${pc}">\${pct}</span>\` : ''}</div></div>
-        <div class="reason">\${reason}</div>
-        <div class="sig-row"><span class="pill \${ac}">\${action === 'CLOSE' ? 'Exit now' : 'Hold'}</span></div>
-      </div>\`;
+        ? s + ' is down ' + pct + ' today — momentum suggests considering an exit.'
+        : s + ' is ' + pct + ' today — position looks stable, monitor closely.';
+      return '<div class="card" onclick="openMod('' + s + '')">' +
+        '<div class="card-row"><div><div class="csym">' + s + '<span class="long-tag">LONG</span></div>' +
+        '<div class="cname">' + longs[s] + ' shares</div></div>' +
+        '<div>' + (pct ? '<span class="chg ' + pc + '">' + pct + '</span>' : '') + '</div></div>' +
+        '<div class="reason">' + reason + '</div>' +
+        '<div class="sig-row"><span class="pill ' + ac + '">' + (action === 'CLOSE' ? 'Exit now' : 'Hold') + '</span></div>' +
+        '</div>';
     }).join('');
   }
 
   if (!so.length) {
     sel.innerHTML = '<div class="empty">No short positions yet.</div>';
   } else {
-    sel.innerHTML = so.map(s => {
-      const sp = shortPos[s]; const p = prices[s];
-      const pnl = sp.qty*(sp.entryPrice-(p?.price||sp.entryPrice));
+    sel.innerHTML = so.map(function(s) {
+      const sp = shortPos[s];
+      const p = prices[s];
+      const pnl = sp.qty * (sp.entryPrice - (p ? p.price : sp.entryPrice));
       const action = p && p.pct > 1.5 ? 'COVER' : 'HOLD';
       const ac = action === 'COVER' ? 'b-pill' : 'g-pill';
       const reason = action === 'COVER'
-        ? \`\${s} is rising today — momentum suggests covering your short.\`
-        : \`\${s} short position looks good, monitor for reversal signals.\`;
-      return \`<div class="card" onclick="openMod('\${s}')">
-        <div class="card-row"><div><div class="csym">\${s}<span class="short-tag">SHORT</span></div><div class="cname">\${sp.qty} @ $\${sp.entryPrice.toFixed(2)}</div></div>
-        <div class="cprice" style="\${pnl>=0?'color:var(--green)':'color:var(--red)'}">\${pnl>=0?'+':''}$\${pnl.toFixed(2)}</div></div>
-        <div class="reason">\${reason}</div>
-        <div class="sig-row"><span class="pill \${ac}">\${action === 'COVER' ? 'Cover now' : 'Hold'}</span></div>
-      </div>\`;
+        ? s + ' is rising today — momentum suggests covering your short.'
+        : s + ' short position looks good, monitor for reversal signals.';
+      return '<div class="card" onclick="openMod('' + s + '')">' +
+        '<div class="card-row"><div><div class="csym">' + s + '<span class="short-tag">SHORT</span></div>' +
+        '<div class="cname">' + sp.qty + ' @ $' + sp.entryPrice.toFixed(2) + '</div></div>' +
+        '<div class="cprice" style="' + (pnl>=0?'color:var(--green)':'color:var(--red)') + '">' + (pnl>=0?'+':'') + '$' + pnl.toFixed(2) + '</div></div>' +
+        '<div class="reason">' + reason + '</div>' +
+        '<div class="sig-row"><span class="pill ' + ac + '">' + (action === 'COVER' ? 'Cover now' : 'Hold') + '</span></div>' +
+        '</div>';
     }).join('');
   }
 }
@@ -1357,20 +1367,21 @@ async function loadCrypto() {
   el.innerHTML = '<div class="lrow"><div class="spin"></div>Fetching live crypto prices...</div>';
   await fetchCryptoPrices();
 
-  // Generate simple momentum-based signals without AI
-  const recs = CRYPTOS.map(c => {
+  const recs = CRYPTOS.map(function(c) {
     const p = prices[c.sym];
     if (!p) return null;
     const rec = p.pct > 1 ? 'BUY' : p.pct < -1 ? 'SELL' : 'HOLD';
-    const oi_tier = c.ticker === 'BTC' ? 'Very High' : c.ticker === 'ETH' ? 'High' : c.ticker === 'SOL' || c.ticker === 'BNB' ? 'Medium' : 'Low';
+    const oi_tier = c.ticker === 'BTC' ? 'Very High' : c.ticker === 'ETH' ? 'High' : (c.ticker === 'SOL' || c.ticker === 'BNB') ? 'Medium' : 'Low';
     const confidence = Math.abs(p.pct) > 3 ? 'High' : Math.abs(p.pct) > 1 ? 'Medium' : 'Low';
+    const direction = p.pct >= 0 ? 'up' : 'down';
+    const signal = rec === 'BUY' ? 'Bullish momentum suggests potential intraday upside.' : rec === 'SELL' ? 'Bearish pressure dominates — caution advised.' : 'Sideways action — wait for clearer direction.';
     return {
       ticker: c.ticker,
-      rec,
-      reason: \`\${c.ticker} is \${p.pct >= 0 ? 'up' : 'down'} \${Math.abs(p.pct).toFixed(2)}% today. \${rec === 'BUY' ? 'Bullish momentum suggests potential intraday upside.' : rec === 'SELL' ? 'Bearish pressure dominates — caution advised.' : 'Sideways action — wait for clearer direction.'}\`,
-      oi_tier,
-      oi_note: \`\${c.ticker} options activity is typically \${oi_tier.toLowerCase()} relative to crypto market\`,
-      confidence
+      rec: rec,
+      reason: c.ticker + ' is ' + direction + ' ' + Math.abs(p.pct).toFixed(2) + '% today. ' + signal,
+      oi_tier: oi_tier,
+      oi_note: c.ticker + ' options activity is typically ' + oi_tier.toLowerCase() + ' relative to crypto market',
+      confidence: confidence
     };
   }).filter(Boolean);
 
