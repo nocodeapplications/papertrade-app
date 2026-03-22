@@ -1169,7 +1169,7 @@ let prices = {}, cash = 10000, longs = {}, shortPos = {}, tradeHistory = [];
 let buyRecs = [], shortRecs = [], cryptoRecs = [];
 let curSym = null, mode = 'buy', qty = 1, curTab = 'ai', chartInst = null;
 
-const PROXY = 'https://corsproxy.io/?';
+const PROXY = 'https://api.allorigins.win/raw?url=';
 const YF = 'https://query1.finance.yahoo.com/v8/finance/chart/';
 
 // ─── DATA FETCHING ─────────────────────────────────────────
@@ -1273,7 +1273,7 @@ function renderAIBuys() {
     const pct = p ? ((p.pct >= 0 ? '+' : '') + p.pct.toFixed(2) + '%') : '';
     const pc = p ? (p.pct >= 0 ? 'pos' : 'neg') : '';
     const cc = r.confidence === 'High' ? 'g-pill' : r.confidence === 'Medium' ? 'y-pill' : 'b-pill';
-    return `<div class="card" onclick="openMod('${r.sym}')">
+    return `<div class="card" onclick="openMod(this.dataset.sym)" data-sym="${r.sym}">
       <div class="card-row">
         <div><div class="csym"><span class="rank">#${i+1}</span>${r.sym}</div><div class="cname">${getName(r.sym)}</div></div>
         <div class="cprice">${ps}${pct ? `<br><span class="chg ${pc}">${pct}</span>` : ''}</div>
@@ -1293,7 +1293,7 @@ function renderAIShorts() {
     const pct = p ? ((p.pct >= 0 ? '+' : '') + p.pct.toFixed(2) + '%') : '';
     const pc = p ? (p.pct >= 0 ? 'pos' : 'neg') : '';
     const cc = r.confidence === 'High' ? 'r-pill' : r.confidence === 'Medium' ? 'y-pill' : 'b-pill';
-    return `<div class="card" onclick="openMod('${r.sym}')">
+    return `<div class="card" onclick="openMod(this.dataset.sym)" data-sym="${r.sym}">
       <div class="card-row">
         <div><div class="csym"><span class="rank">#${i+1}</span>${r.sym}</div><div class="cname">${getName(r.sym)}</div></div>
         <div class="cprice">${ps}${pct ? `<br><span class="chg ${pc}">${pct}</span>` : ''}</div>
@@ -1326,7 +1326,7 @@ async function loadSignals() {
         : s + ' is ' + pct + ' today - position looks stable, monitor closely.';
       var chgHtml = pct ? '<span class="chg ' + pc + '">' + pct + '</span>' : '';
       var actionLabel = action === 'CLOSE' ? 'Exit now' : 'Hold';
-      lhtml += '<div class="card" onclick="openMod('' + s + '')">';
+      lhtml += '<div class="card" onclick="openMod(this.dataset.sym)" data-sym="' + s + '">';
       lhtml += '<div class="card-row"><div><div class="csym">' + s + '<span class="long-tag">LONG</span></div>';
       lhtml += '<div class="cname">' + longs[s] + ' shares</div></div><div>' + chgHtml + '</div></div>';
       lhtml += '<div class="reason">' + reason + '</div>';
@@ -1352,7 +1352,7 @@ async function loadSignals() {
       var pnlColor = pnl>=0 ? 'color:var(--green)' : 'color:var(--red)';
       var pnlStr = (pnl>=0?'+':'') + '$' + pnl.toFixed(2);
       var sactionLabel = saction === 'COVER' ? 'Cover now' : 'Hold';
-      shtml += '<div class="card" onclick="openMod('' + sym + '')">';
+      shtml += '<div class="card" onclick="openMod(this.dataset.sym)" data-sym="' + sym + '">';
       shtml += '<div class="card-row"><div><div class="csym">' + sym + '<span class="short-tag">SHORT</span></div>';
       shtml += '<div class="cname">' + sp.qty + ' @ $' + sp.entryPrice.toFixed(2) + '</div></div>';
       shtml += '<div class="cprice" style="' + pnlColor + '">' + pnlStr + '</div></div>';
