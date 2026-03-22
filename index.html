@@ -1207,7 +1207,7 @@ async function fetchCryptoPrices() {
 }
 
 // ─── AI ────────────────────────────────────────────────────
-const ANTHROPIC_KEY = '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';
+const ANTHROPIC_KEY = 'PASTE_YOUR_KEY_HERE';
 
 async function callAI(prompt, maxTokens = 1500) {
   const r = await fetch('https://api.anthropic.com/v1/messages', {
@@ -1239,26 +1239,33 @@ function priceCtx(list) {
 }
 
 async function loadAIPicks() {
-  document.getElementById('ai-buys').innerHTML = '<div class="lrow"><div class="spin"></div>Analysing buy opportunities...</div>';
-  document.getElementById('ai-shorts').innerHTML = '<div class="lrow"><div class="spin"></div>Analysing short opportunities...</div>';
+  document.getElementById('ai-buys').innerHTML = '<div class="lrow"><div class="spin"></div>Calculating momentum picks...</div>';
+  document.getElementById('ai-shorts').innerHTML = '<div class="lrow"><div class="spin"></div>Calculating bearish signals...</div>';
   if (Object.keys(prices).length < 4) await fetchAll();
-  const ctx = priceCtx(STOCKS);
-  const today = new Date().toDateString();
-  const prompt = `Today is ${today}. Stock prices and daily changes:\n${ctx}\n\nYou are a quantitative day-trading analyst. Identify exactly:\n1. The TOP 5 stocks to BUY today (best upside momentum, trend, catalyst)\n2. The TOP 5 stocks to SHORT/SELL today (clearest bearish signals)\n\nLimit each list to exactly 5. Reply ONLY with this exact JSON (no markdown fences):\n{"buys":[{"sym":"AAPL","reason":"2 sentences max","exit":"specific price target or condition to close today","confidence":"High|Medium|Low"}],"shorts":[{"sym":"TSLA","reason":"2 sentences max","cover":"specific condition to buy back/cover","confidence":"High|Medium|Low"}]}`;
-  try {
-    const raw = await callAI(prompt);
-    const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
-    buyRecs = (parsed.buys || []).slice(0, 5);
-    shortRecs = (parsed.shorts || []).slice(0, 5);
-    renderAIBuys();
-    renderAIShorts();
-    document.getElementById('ai-ts').textContent = 'Updated ' + new Date().toLocaleTimeString();
-  } catch {
-    document.getElementById('ai-buys').innerHTML = '<div class="empty">Could not load recommendations.<br>Check your connection and refresh.</div>';
-    document.getElementById('ai-shorts').innerHTML = '<div class="empty">Could not load recommendations.</div>';
-  }
-}
 
+  // Sort stocks by momentum (biggest gainers = buys, biggest losers = shorts)
+  const ranked = STOCKS.map(s => ({ sym: s.sym, name: s.name, data: prices[s.sym] }))
+    .filter(s => s.data)
+    .sort((a, b) => b.data.pct - a.data.pct);
+
+  buyRecs = ranked.slice(0, 5).map(s => ({
+    sym: s.sym,
+    reason: `${s.sym} is showing strong upward momentum of ${s.data.pct >= 0 ? '+' : ''}${s.data.pct.toFixed(2)}% today. Price action suggests continued buying interest.`,
+    exit: `Consider exiting if price drops more than 1.5% from current level of ${fmtPrice(s.data.price, s.sym)}`,
+    confidence: s.data.pct > 2 ? 'High' : s.data.pct > 0.5 ? 'Medium' : 'Low'
+  }));
+
+  shortRecs = ranked.slice(-5).reverse().map(s => ({
+    sym: s.sym,
+    reason: `${s.sym} is showing bearish momentum of ${s.data.pct >= 0 ? '+' : ''}${s.data.pct.toFixed(2)}% today. Selling pressure appears dominant.`,
+    cover: `Consider covering if price rises more than 1.5% from current level of ${fmtPrice(s.data.price, s.sym)}`,
+    confidence: s.data.pct < -2 ? 'High' : s.data.pct < -0.5 ? 'Medium' : 'Low'
+  }));
+
+  renderAIBuys();
+  renderAIShorts();
+  document.getElementById('ai-ts').textContent = 'Momentum-based · ' + new Date().toLocaleTimeString();
+}
 function renderAIBuys() {
   const el = document.getElementById('ai-buys');
   if (!buyRecs.length) { el.innerHTML = '<div class="empty">No data.</div>'; return; }
@@ -1308,65 +1315,69 @@ async function loadSignals() {
   if (!lo.length) {
     lel.innerHTML = '<div class="empty">No long positions yet.<br>Buy some stocks first.</div>';
   } else {
-    lel.innerHTML = '<div class="lrow"><div class="spin"></div>Analysing long positions for exit signals...</div>';
-    const ctx = lo.map(s => { const p = prices[s]; return `${s}: $${p?.price?.toFixed(2)||'?'} (${p?.pct>=0?'+':''}${p?.pct?.toFixed(2)||'?'}%), ${longs[s]} shares`; }).join('\n');
-    try {
-      const raw = await callAI(`A trader holds these long positions:\n${ctx}\n\nFor EACH position, assess if today's price action suggests closing/exiting. Reply ONLY with JSON array:\n[{"sym":"AAPL","action":"CLOSE|HOLD","reason":"1 sentence","urgency":"Urgent|Monitor|Hold"}]`);
-      const sigs = JSON.parse(raw.replace(/```json|```/g, '').trim());
-      lel.innerHTML = sigs.map(r => {
-        const p = prices[r.sym]; const pct = p ? ((p.pct>=0?'+':'')+p.pct.toFixed(2)+'%') : '';
-        const pc = p ? (p.pct >= 0 ? 'pos' : 'neg') : '';
-        const ac = r.action === 'CLOSE' ? 'g-pill' : r.urgency === 'Monitor' ? 'y-pill' : 'b-pill';
-        return `<div class="card" onclick="openMod('${r.sym}')">
-          <div class="card-row"><div><div class="csym">${r.sym}<span class="long-tag">LONG</span></div><div class="cname">${longs[r.sym]} shares</div></div>
-          <div>${pct ? `<span class="chg ${pc}">${pct}</span>` : ''}</div></div>
-          <div class="reason">${r.reason}</div>
-          <div class="sig-row"><span class="pill ${ac}">${r.action === 'CLOSE' ? 'Exit now' : r.urgency}</span></div>
-        </div>`;
-      }).join('');
-    } catch { lel.innerHTML = '<div class="empty">Analysis failed. Try again.</div>'; }
+    lel.innerHTML = lo.map(s => {
+      const p = prices[s]; const pct = p ? ((p.pct>=0?'+':'')+p.pct.toFixed(2)+'%') : '';
+      const pc = p ? (p.pct >= 0 ? 'pos' : 'neg') : '';
+      const action = p && p.pct < -1.5 ? 'CLOSE' : 'HOLD';
+      const ac = action === 'CLOSE' ? 'g-pill' : 'b-pill';
+      const reason = action === 'CLOSE'
+        ? `${s} is down ${pct} today — momentum suggests considering an exit.`
+        : `${s} is ${pct} today — position looks stable, monitor closely.`;
+      return \`<div class="card" onclick="openMod('\${s}')">
+        <div class="card-row"><div><div class="csym">\${s}<span class="long-tag">LONG</span></div><div class="cname">\${longs[s]} shares</div></div>
+        <div>\${pct ? \`<span class="chg \${pc}">\${pct}</span>\` : ''}</div></div>
+        <div class="reason">\${reason}</div>
+        <div class="sig-row"><span class="pill \${ac}">\${action === 'CLOSE' ? 'Exit now' : 'Hold'}</span></div>
+      </div>\`;
+    }).join('');
   }
 
   if (!so.length) {
-    sel.innerHTML = '<div class="empty">No short positions yet.<br>Use AI Picks → Top Shorts to get ideas.</div>';
+    sel.innerHTML = '<div class="empty">No short positions yet.</div>';
   } else {
-    sel.innerHTML = '<div class="lrow"><div class="spin"></div>Analysing short positions for cover signals...</div>';
-    const ctx = so.map(s => { const p=prices[s]; const sp=shortPos[s]; const pnl=sp.qty*(sp.entryPrice-(p?.price||sp.entryPrice)); return `${s}: shorted ${sp.qty}@$${sp.entryPrice.toFixed(2)}, now $${p?.price?.toFixed(2)||'?'}, P&L $${pnl.toFixed(2)}`; }).join('\n');
-    try {
-      const raw = await callAI(`A trader has these short positions:\n${ctx}\n\nFor EACH, assess if today's action suggests covering/buying back. Reply ONLY with JSON:\n[{"sym":"TSLA","action":"COVER|HOLD","reason":"1 sentence","urgency":"Urgent|Monitor|Hold"}]`);
-      const sigs = JSON.parse(raw.replace(/```json|```/g, '').trim());
-      sel.innerHTML = sigs.map(r => {
-        const sp = shortPos[r.sym]; const p = prices[r.sym];
-        const pnl = sp ? sp.qty*(sp.entryPrice-(p?.price||sp.entryPrice)) : 0;
-        const ac = r.action === 'COVER' ? 'b-pill' : r.urgency === 'Monitor' ? 'y-pill' : 'g-pill';
-        return `<div class="card" onclick="openMod('${r.sym}')">
-          <div class="card-row"><div><div class="csym">${r.sym}<span class="short-tag">SHORT</span></div><div class="cname">${sp?.qty||0} @ $${sp?.entryPrice?.toFixed(2)||'?'}</div></div>
-          <div class="cprice" style="${pnl>=0?'color:var(--green)':'color:var(--red)'}">${pnl>=0?'+':''}$${pnl.toFixed(2)}</div></div>
-          <div class="reason">${r.reason}</div>
-          <div class="sig-row"><span class="pill ${ac}">${r.action==='COVER'?'Cover now':r.urgency}</span></div>
-        </div>`;
-      }).join('');
-    } catch { sel.innerHTML = '<div class="empty">Analysis failed. Try again.</div>'; }
+    sel.innerHTML = so.map(s => {
+      const sp = shortPos[s]; const p = prices[s];
+      const pnl = sp.qty*(sp.entryPrice-(p?.price||sp.entryPrice));
+      const action = p && p.pct > 1.5 ? 'COVER' : 'HOLD';
+      const ac = action === 'COVER' ? 'b-pill' : 'g-pill';
+      const reason = action === 'COVER'
+        ? \`\${s} is rising today — momentum suggests covering your short.\`
+        : \`\${s} short position looks good, monitor for reversal signals.\`;
+      return \`<div class="card" onclick="openMod('\${s}')">
+        <div class="card-row"><div><div class="csym">\${s}<span class="short-tag">SHORT</span></div><div class="cname">\${sp.qty} @ $\${sp.entryPrice.toFixed(2)}</div></div>
+        <div class="cprice" style="\${pnl>=0?'color:var(--green)':'color:var(--red)'}">\${pnl>=0?'+':''}$\${pnl.toFixed(2)}</div></div>
+        <div class="reason">\${reason}</div>
+        <div class="sig-row"><span class="pill \${ac}">\${action === 'COVER' ? 'Cover now' : 'Hold'}</span></div>
+      </div>\`;
+    }).join('');
   }
 }
-
 async function loadCrypto() {
   const el = document.getElementById('crypto-list');
   el.innerHTML = '<div class="lrow"><div class="spin"></div>Fetching live crypto prices...</div>';
   await fetchCryptoPrices();
-  el.innerHTML = '<div class="lrow"><div class="spin"></div>AI analysing crypto signals &amp; open interest...</div>';
-  const ctx = priceCtx(CRYPTOS);
-  const prompt = `Today is ${new Date().toDateString()}. Crypto prices and daily changes:\n${ctx}\n\nYou are a crypto day-trading analyst. For each of these 10 cryptocurrencies, provide:\n1. A day-trading BUY/SELL/HOLD recommendation\n2. 2-sentence reason focused on intraday momentum\n3. Options open interest tier estimate (BTC/ETH = Very High, SOL/BNB = High, others = Medium/Low/Very Low)\n4. Brief OI context note\n5. Confidence level\n\nReply ONLY with JSON array (no markdown):\n[{"ticker":"BTC","rec":"BUY|SELL|HOLD","reason":"2 sentences","oi_tier":"Very High|High|Medium|Low|Very Low","oi_note":"brief context","confidence":"High|Medium|Low"}]`;
-  try {
-    const raw = await callAI(prompt);
-    cryptoRecs = JSON.parse(raw.replace(/```json|```/g, '').trim());
-    renderCrypto();
-    document.getElementById('crypto-ts').textContent = 'Updated ' + new Date().toLocaleTimeString();
-  } catch {
-    el.innerHTML = '<div class="empty">Could not load crypto analysis.<br>Check your connection and refresh.</div>';
-  }
-}
 
+  // Generate simple momentum-based signals without AI
+  const recs = CRYPTOS.map(c => {
+    const p = prices[c.sym];
+    if (!p) return null;
+    const rec = p.pct > 1 ? 'BUY' : p.pct < -1 ? 'SELL' : 'HOLD';
+    const oi_tier = c.ticker === 'BTC' ? 'Very High' : c.ticker === 'ETH' ? 'High' : c.ticker === 'SOL' || c.ticker === 'BNB' ? 'Medium' : 'Low';
+    const confidence = Math.abs(p.pct) > 3 ? 'High' : Math.abs(p.pct) > 1 ? 'Medium' : 'Low';
+    return {
+      ticker: c.ticker,
+      rec,
+      reason: \`\${c.ticker} is \${p.pct >= 0 ? 'up' : 'down'} \${Math.abs(p.pct).toFixed(2)}% today. \${rec === 'BUY' ? 'Bullish momentum suggests potential intraday upside.' : rec === 'SELL' ? 'Bearish pressure dominates — caution advised.' : 'Sideways action — wait for clearer direction.'}\`,
+      oi_tier,
+      oi_note: \`\${c.ticker} options activity is typically \${oi_tier.toLowerCase()} relative to crypto market\`,
+      confidence
+    };
+  }).filter(Boolean);
+
+  cryptoRecs = recs;
+  renderCrypto();
+  document.getElementById('crypto-ts').textContent = 'Momentum-based · ' + new Date().toLocaleTimeString();
+}
 function renderCrypto() {
   const el = document.getElementById('crypto-list');
   if (!cryptoRecs.length) { el.innerHTML = '<div class="empty">No data.</div>'; return; }
