@@ -1103,6 +1103,7 @@
 
     <!-- HISTORY -->
     <div class="sec" id="tab-history">
+      <div id="hist-summary" style="background:var(--bg2);border-radius:var(--radius);padding:10px 14px;margin-bottom:10px;border:1px solid var(--border);"></div>
       <div id="hist-list"></div>
     </div>
 
@@ -1219,9 +1220,9 @@
   <!-- CAPITAL MODAL -->
   <div class="cap-modal" id="cap-modal">
     <div class="cap-box">
-      <div class="cap-title">Change starting capital</div>
-      <input class="cap-inp" id="cap-inp" type="number" min="100" placeholder="10000"/>
-      <div class="cap-row">
+      <div class="cap-title">Add / withdraw capital</div>
+      <input class="cap-inp" id="cap-inp" type="number" min="0" step="100" placeholder="Enter new total capital"/>
+      <div style="font-size:11px;color:var(--text3);font-family:var(--font-display);margin-bottom:10px;">Enter your new total capital. The difference will be recorded as a deposit or withdrawal.</div><div class="cap-row">
         <button class="cap-cancel" onclick="document.getElementById('cap-modal').classList.remove('on')">Cancel</button>
         <button class="cap-save" onclick="saveCapital()">Save</button>
       </div>
@@ -1239,6 +1240,32 @@ const STOCKS = [
   {sym:'DIS',name:'Walt Disney Co.'},{sym:'SPOT',name:'Spotify'},{sym:'CRM',name:'Salesforce'},
   {sym:'PYPL',name:'PayPal'},{sym:'UBER',name:'Uber Technologies'},{sym:'COIN',name:'Coinbase'},
   {sym:'PLTR',name:'Palantir Technologies'},{sym:'BABA',name:'Alibaba Group'},
+  {sym:'GS',name:'Goldman Sachs'},{sym:'BAC',name:'Bank of America'},{sym:'WFC',name:'Wells Fargo'},
+  {sym:'C',name:'Citigroup'},{sym:'MS',name:'Morgan Stanley'},{sym:'BRK-B',name:'Berkshire Hathaway'},
+  {sym:'JNJ',name:'Johnson & Johnson'},{sym:'PFE',name:'Pfizer'},{sym:'MRNA',name:'Moderna'},
+  {sym:'ABBV',name:'AbbVie'},{sym:'UNH',name:'UnitedHealth Group'},{sym:'CVS',name:'CVS Health'},
+  {sym:'XOM',name:'ExxonMobil'},{sym:'CVX',name:'Chevron'},{sym:'BP',name:'BP plc'},
+  {sym:'WMT',name:'Walmart'},{sym:'TGT',name:'Target'},{sym:'COST',name:'Costco'},
+  {sym:'AMZN',name:'Amazon.com'},{sym:'HD',name:'Home Depot'},{sym:'LOW',name:'Lowes'},
+  {sym:'BA',name:'Boeing'},{sym:'CAT',name:'Caterpillar'},{sym:'GE',name:'GE Aerospace'},
+  {sym:'F',name:'Ford Motor'},{sym:'GM',name:'General Motors'},{sym:'RIVN',name:'Rivian'},
+  {sym:'NIO',name:'NIO Inc.'},{sym:'LCID',name:'Lucid Group'},{sym:'TM',name:'Toyota Motor'},
+  {sym:'NFLX',name:'Netflix'},{sym:'T',name:'AT&T'},{sym:'VZ',name:'Verizon'},
+  {sym:'TMUS',name:'T-Mobile'},{sym:'CMCSA',name:'Comcast'},{sym:'CHTR',name:'Charter Comm.'},
+  {sym:'GOOG',name:'Alphabet Class C'},{sym:'SNAP',name:'Snap Inc.'},{sym:'PINS',name:'Pinterest'},
+  {sym:'TWTR',name:'Twitter/X'},{sym:'RBLX',name:'Roblox'},{sym:'U',name:'Unity Software'},
+  {sym:'HOOD',name:'Robinhood'},{sym:'SQ',name:'Block Inc.'},{sym:'AFRM',name:'Affirm'},
+  {sym:'SHOP',name:'Shopify'},{sym:'SE',name:'Sea Limited'},{sym:'MELI',name:'MercadoLibre'},
+  {sym:'TSM',name:'Taiwan Semiconductor'},{sym:'ASML',name:'ASML Holding'},{sym:'ARM',name:'ARM Holdings'},
+  {sym:'QCOM',name:'Qualcomm'},{sym:'MU',name:'Micron Technology'},{sym:'AVGO',name:'Broadcom'},
+  {sym:'ORCL',name:'Oracle'},{sym:'SAP',name:'SAP SE'},{sym:'IBM',name:'IBM'},
+  {sym:'ADBE',name:'Adobe'},{sym:'NOW',name:'ServiceNow'},{sym:'SNOW',name:'Snowflake'},
+  {sym:'NET',name:'Cloudflare'},{sym:'ZS',name:'Zscaler'},{sym:'CRWD',name:'CrowdStrike'},
+  {sym:'S',name:'SentinelOne'},{sym:'PANW',name:'Palo Alto Networks'},{sym:'OKTA',name:'Okta'},
+  {sym:'MDB',name:'MongoDB'},{sym:'DDOG',name:'Datadog'},{sym:'TEAM',name:'Atlassian'},
+  {sym:'ZM',name:'Zoom Video'},{sym:'DOCU',name:'DocuSign'},{sym:'TWLO',name:'Twilio'},
+  {sym:'SPY',name:'S&P 500 ETF'},{sym:'QQQ',name:'Nasdaq 100 ETF'},{sym:'IWM',name:'Russell 2000 ETF'},
+  {sym:'VTI',name:'Vanguard Total Market'},{sym:'GLD',name:'Gold ETF'},{sym:'SLV',name:'Silver ETF'},
 ];
 
 const CRYPTOS = [
@@ -1588,19 +1615,61 @@ function renderPortfolio() {
 
 function renderHistory() {
   const el = document.getElementById('hist-list');
+
+  // ── Summary box ──
+  const sumEl = document.getElementById('hist-summary');
+  if (sumEl) {
+    const totalDeposits = tradeHistory.filter(t => t.type === 'deposit').reduce((a, t) => a + Math.abs(t.amount), 0);
+    const totalWithdrawals = tradeHistory.filter(t => t.type === 'withdrawal').reduce((a, t) => a + Math.abs(t.amount), 0);
+    const trades = tradeHistory.filter(t => t.type === 'buy' || t.type === 'sell' || t.type === 'short' || t.type === 'cover').length;
+    const lv = Object.keys(longs).filter(s => longs[s] > 0).reduce((a, s) => a + (prices[s]?.price || 0) * longs[s], 0);
+    const sv = Object.keys(shortPos).filter(s => shortPos[s]?.qty > 0).reduce((a, s) => { const sp = shortPos[s]; return a + sp.qty * (sp.entryPrice - (prices[s]?.price || sp.entryPrice)); }, 0);
+    const netPnL = (cash + lv + sv) - capital;
+    sumEl.innerHTML =
+      '<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">' +
+      '<div><div style="font-size:10px;color:var(--text3);font-family:var(--font-display);font-weight:600;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:3px;">Current capital</div>' +
+      '<div style="font-size:14px;font-weight:700;font-family:var(--font-mono);color:var(--text);">$' + capital.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + '</div></div>' +
+      '<div><div style="font-size:10px;color:var(--text3);font-family:var(--font-display);font-weight:600;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:3px;">Cash available</div>' +
+      '<div style="font-size:14px;font-weight:700;font-family:var(--font-mono);color:var(--text);">$' + cash.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + '</div></div>' +
+      '<div><div style="font-size:10px;color:var(--text3);font-family:var(--font-display);font-weight:600;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:3px;">Net P&L</div>' +
+      '<div style="font-size:14px;font-weight:700;font-family:var(--font-mono);color:' + (netPnL >= 0 ? 'var(--green)' : 'var(--red)') + ';">' + (netPnL >= 0 ? '+$' : '-$') + Math.abs(netPnL).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + '</div></div>' +
+      '<div><div style="font-size:10px;color:var(--text3);font-family:var(--font-display);font-weight:600;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:3px;">Total trades</div>' +
+      '<div style="font-size:14px;font-weight:700;font-family:var(--font-mono);color:var(--text);">' + trades + '</div></div>' +
+      '</div>';
+  }
+
   if (!tradeHistory.length) { el.innerHTML = '<div class="empty">No trades yet.</div>'; return; }
   const labels = { buy: 'LONG', sell: 'SELL', short: 'SHORT', cover: 'COVER' };
-  const tagFn = t => t === 'short' ? 'short-tag' : t === 'buy' ? 'long-tag' : '';
-  el.innerHTML = [...tradeHistory].reverse().map(t => `
-    <div class="card">
-      <div class="card-row">
-        <div>
-          <div class="csym">${t.sym.replace('-USD','')}<span class="${tagFn(t.type)}" style="margin-left:7px;font-size:10px;padding:2px 6px;border-radius:4px;">${labels[t.type]||t.type}</span></div>
-          <div class="cname">${t.date} · ${t.qty} shares @ $${t.price.toFixed(2)}</div>
-        </div>
-        <div class="cprice">$${t.total.toFixed(2)}</div>
-      </div>
-    </div>`).join('');
+
+  el.innerHTML = [...tradeHistory].reverse().map(t => {
+    // Capital deposit / withdrawal events
+    if (t.type === 'deposit' || t.type === 'withdrawal') {
+      const isDeposit = t.type === 'deposit';
+      const tagCls = isDeposit ? 'long-tag' : 'short-tag';
+      const tagLabel = isDeposit ? 'DEPOSIT' : 'WITHDRAWAL';
+      const amtColor = isDeposit ? 'color:var(--green)' : 'color:var(--red)';
+      const amtStr = (isDeposit ? '+$' : '-$') + Math.abs(t.amount).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+      return '<div class="card">' +
+        '<div class="card-row">' +
+        '<div><div class="csym">Capital<span class="' + tagCls + '" style="margin-left:7px;font-size:10px;padding:2px 6px;border-radius:4px;">' + tagLabel + '</span></div>' +
+        '<div class="cname">' + t.date + ' · Balance: $' + t.newCapital.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) + '</div></div>' +
+        '<div class="cprice" style="' + amtColor + '">' + amtStr + '</div>' +
+        '</div></div>';
+    }
+    // Regular trades
+    const tagFn = t.type === 'short' ? 'short-tag' : t.type === 'buy' ? 'long-tag' : '';
+    const tagLabel = labels[t.type] || t.type.toUpperCase();
+    const symDisplay = t.sym ? t.sym.replace('-USD','') : '—';
+    const qtyDisplay = t.qty !== undefined ? fmtQty(t.qty) + ' shares' : '';
+    const priceDisplay = t.price !== undefined ? ' @ ' + fmtPrice(t.price, t.sym) : '';
+    const totalDisplay = t.total !== undefined ? fmtPrice(t.total, t.sym) : '—';
+    return '<div class="card">' +
+      '<div class="card-row">' +
+      '<div><div class="csym">' + symDisplay + (tagFn ? '<span class="' + tagFn + '" style="margin-left:7px;font-size:10px;padding:2px 6px;border-radius:4px;">' + tagLabel + '</span>' : '') + '</div>' +
+      '<div class="cname">' + t.date + ' · ' + qtyDisplay + priceDisplay + '</div></div>' +
+      '<div class="cprice">' + totalDisplay + '</div>' +
+      '</div></div>';
+  }).join('');
 }
 
 function updateStats() {
@@ -1834,16 +1903,93 @@ function toast(msg) {
 // ─── SEARCH ────────────────────────────────────────────────
 const si = document.getElementById('sinput');
 const sd = document.getElementById('sdrop');
+let searchTimer = null;
+
 si.addEventListener('input', () => {
-  const q = si.value.toUpperCase().trim();
+  const q = si.value.trim();
   if (!q) { sd.style.display = 'none'; return; }
-  const m = UNIVERSE.filter(s => s.sym.startsWith(q) || s.name.toUpperCase().includes(q) || (s.ticker && s.ticker.startsWith(q))).slice(0, 6);
-  if (!m.length) { sd.style.display = 'none'; return; }
-  sd.innerHTML = m.map(s => `<div class="sdi" onclick="pickS('${s.sym}')"><span class="sym">${s.ticker || s.sym}</span><span class="nm">${s.name}</span></div>`).join('');
-  sd.style.display = 'block';
+  const qu = q.toUpperCase();
+
+  // First show local matches instantly
+  const local = UNIVERSE.filter(s =>
+    s.sym.startsWith(qu) || s.name.toUpperCase().includes(qu) || (s.ticker && s.ticker.startsWith(qu))
+  ).slice(0, 6);
+
+  if (local.length) {
+    sd.innerHTML = local.map(s =>
+      '<div class="sdi" onclick="pickS('' + (s.sym) + '')">' +
+      '<span class="sym">' + (s.ticker || s.sym) + '</span>' +
+      '<span class="nm">' + s.name + '</span></div>'
+    ).join('');
+    sd.style.display = 'block';
+  } else {
+    // Show a "Search Yahoo Finance" option for unknown tickers
+    sd.innerHTML = '<div class="sdi" onclick="lookupTicker('' + qu + '')" style="color:var(--accent);">' +
+      '<span class="sym">' + qu + '</span>' +
+      '<span class="nm">Search Yahoo Finance →</span></div>';
+    sd.style.display = 'block';
+  }
+
+  // Debounced live lookup for any ticker
+  clearTimeout(searchTimer);
+  if (q.length >= 1) {
+    searchTimer = setTimeout(() => liveSearch(q), 600);
+  }
 });
-document.addEventListener('click', e => { if (!e.target.closest('#sinput') && !e.target.closest('#sdrop')) sd.style.display = 'none'; });
-async function pickS(sym) { si.value = ''; sd.style.display = 'none'; openMod(sym); }
+
+async function liveSearch(q) {
+  const qu = q.toUpperCase().trim();
+  // Try to fetch price for this ticker directly
+  try {
+    const p = await fetchPrice(qu);
+    if (p && p.price) {
+      // It's a valid ticker — add to dropdown
+      const existing = UNIVERSE.find(x => x.sym === qu);
+      if (!existing) {
+        const name = qu; // We'll use the symbol as name if unknown
+        sd.innerHTML = '<div class="sdi" onclick="pickS('' + qu + '')">' +
+          '<span class="sym">' + qu + '</span>' +
+          '<span class="nm">$' + p.price.toFixed(2) + ' · Tap to trade</span></div>';
+        sd.style.display = 'block';
+      }
+    }
+  } catch {}
+}
+
+async function lookupTicker(sym) {
+  si.value = sym;
+  sd.innerHTML = '<div class="sdi"><span class="sym">Loading ' + sym + '...</span></div>';
+  const p = await fetchPrice(sym);
+  if (p && p.price) {
+    sd.style.display = 'none';
+    si.value = '';
+    // Add to UNIVERSE if not there
+    if (!UNIVERSE.find(x => x.sym === sym)) {
+      STOCKS.push({ sym: sym, name: sym });
+      UNIVERSE.push({ sym: sym, name: sym });
+    }
+    if (!prices[sym]) prices[sym] = p;
+    openMod(sym);
+  } else {
+    sd.innerHTML = '<div class="sdi"><span class="sym" style="color:var(--red);">Symbol not found: ' + sym + '</span></div>';
+    sd.style.display = 'block';
+  }
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('#sinput') && !e.target.closest('#sdrop')) sd.style.display = 'none';
+});
+
+async function pickS(sym) {
+  si.value = '';
+  sd.style.display = 'none';
+  // Add to UNIVERSE if not there
+  if (!UNIVERSE.find(x => x.sym === sym)) {
+    STOCKS.push({ sym, name: sym });
+    UNIVERSE.push({ sym, name: sym });
+  }
+  openMod(sym);
+}
 
 // ═══════════════════════════════════════════════════════
 // AUTH & USER SYSTEM
@@ -1899,6 +2045,14 @@ function doAuth() {
     saveUsers(users);
     const d = loadUserData(username);
     d.cash = startCap; d.capital = startCap;
+    // Log initial deposit to history
+    d.tradeHistory = [{
+      type: 'deposit',
+      amount: startCap,
+      newCapital: startCap,
+      previousCapital: 0,
+      date: new Date().toLocaleDateString()
+    }];
     localStorage.setItem('pt_user_' + username, JSON.stringify(d));
   } else {
     if (!users[username]) { errEl.textContent = 'User not found.'; return; }
@@ -1957,21 +2111,36 @@ function openCapModal() {
 function saveCapital() {
   const val = parseFloat(document.getElementById('cap-inp').value);
   if (!val || val < 100) return;
-  // Calculate how much has been invested so far
-  const invested = Object.keys(longs).filter(s => longs[s] > 0)
-    .reduce((a, s) => a + (prices[s]?.price || 0) * longs[s], 0);
-  const shortMargin = Object.keys(shortPos).filter(s => shortPos[s]?.qty > 0)
-    .reduce((a, s) => a + (shortPos[s].margin || 0), 0);
-  const amountUsed = capital - cash; // how much has been spent from original capital
-  // Set new cash = new capital minus what was already spent
-  const newCash = val - amountUsed;
+
+  const oldCapital = capital;
+  const diff = val - oldCapital;
+  const amountUsed = oldCapital - cash;
+  const newCash = Math.max(0, val - amountUsed);
+
+  if (diff !== 0) {
+    const eventType = diff > 0 ? 'deposit' : 'withdrawal';
+    tradeHistory.push({
+      type: eventType,
+      amount: diff,
+      oldCapital: oldCapital,
+      newCapital: val,
+      date: new Date().toLocaleDateString(),
+      time: new Date().toLocaleTimeString()
+    });
+  }
+
   capital = val;
-  cash = Math.max(0, newCash);
+  cash = newCash;
   saveUserData();
   updateStats();
+  renderHistory();
   document.getElementById('cap-modal').classList.remove('on');
-  toast('Capital updated to $' + val.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}));
+  const changeStr = diff > 0
+    ? 'Deposited +$' + diff.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})
+    : 'Withdrew -$' + Math.abs(diff).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  toast(changeStr + ' · Capital now $' + val.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}));
 }
+
 
 function getOITier(sym) {
   const high = ['AAPL','MSFT','TSLA','AMZN','GOOGL','NVDA','META'];
