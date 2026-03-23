@@ -1,77 +1,187 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-<title>PaperTrade — Fixed P&L</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700&display=swap" rel="stylesheet"/>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>PaperTrade — AI Day Trading</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
-  :root { --bg: #FAFAFA; --bg2: #F4F4F4; --text: #111111; --text3: #999999; --green: #1a7a4a; --red: #c0243a; --border: rgba(0,0,0,0.07); --font-mono: 'Space Mono', monospace; }
-  body { background: var(--bg); color: var(--text); font-family: var(--font-mono); margin: 0; padding: 0; font-size: 13px; }
-  .hdr { padding: 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  :root {
+    --bg: #FAFAFA; --bg2: #F4F4F4; --bg3: #EBEBEB; --bg4: #DCDCDC;
+    --border: rgba(0,0,0,0.07); --text: #111111; --text2: #555555; --text3: #999999;
+    --green: #1a7a4a; --red: #c0243a; --accent: #3d35c8; --radius: 10px;
+    --font-display: 'Syne', sans-serif; --font-mono: 'Space Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-mono); font-size: 13px; overflow-x: hidden; }
+  
+  .app { max-width: 420px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; background: var(--bg); position: relative; }
+  
+  .hdr { padding: 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: var(--bg); z-index: 10; }
+  .logo { font-family: var(--font-display); font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+  
   .stats { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--border); border-bottom: 1px solid var(--border); }
-  .st { background: var(--bg); padding: 10px; border-right: 1px solid var(--border); }
-  .stl { font-size: 9px; color: var(--text3); text-transform: uppercase; }
-  .stv { font-size: 11px; font-weight: 700; }
+  .st { background: var(--bg); padding: 12px 8px; border-right: 1px solid var(--border); }
+  .stl { font-size: 9px; color: var(--text3); text-transform: uppercase; margin-bottom: 4px; font-weight: 700; }
+  .stv { font-size: 11px; font-weight: 700; white-space: nowrap; }
   .pos { color: var(--green); } .neg { color: var(--red); }
-  .card { background: var(--bg2); margin: 10px; padding: 12px; border-radius: 8px; border: 1px solid var(--border); }
-  .btn { width: 100%; padding: 12px; margin-top: 10px; cursor: pointer; border: none; font-weight: bold; }
+
+  .tabbar { display: flex; background: var(--bg2); border-bottom: 1px solid var(--border); position: sticky; top: 58px; z-index: 9; }
+  .tb { flex: 1; text-align: center; padding: 14px; font-size: 12px; cursor: pointer; color: var(--text3); font-weight: 700; transition: 0.2s; }
+  .tb.on { color: var(--text); border-bottom: 2px solid var(--green); background: var(--bg); }
+
+  .content { flex: 1; padding: 16px; padding-bottom: 100px; }
+  .sec { display: none; } .sec.on { display: block; }
+
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; cursor: pointer; transition: 0.2s; }
+  .card:active { transform: scale(0.98); }
+  .csym { font-weight: 800; font-size: 15px; font-family: var(--font-display); }
+  .cname { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  
+  .trade-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 20px; }
+  .btn { padding: 14px; border-radius: 8px; border: none; font-weight: 700; font-family: var(--font-mono); cursor: pointer; }
+  .btn-buy { background: var(--green); color: white; }
+  .btn-sell { background: var(--red); color: white; }
+
+  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; z-index: 100; align-items: flex-end; }
+  .modal-bg.on { display: flex; }
+  .modal { background: var(--bg); width: 100%; padding: 24px; border-radius: 24px 24px 0 0; animation: slideUp 0.3s ease-out; }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 </style>
 </head>
 <body>
 
-<div class="hdr"><div style="font-weight:800; font-size:18px;">PaperTrade</div></div>
+<div class="app">
+  <div class="hdr">
+    <div class="logo">PaperTrade</div>
+    <div style="font-size: 10px; background: var(--bg3); padding: 4px 8px; border-radius: 20px;">v2.0 Beta</div>
+  </div>
 
-<div class="stats">
-  <div class="st"><div class="stl">Equity</div><div id="stat-equity" class="stv">$10,000.00</div></div>
-  <div class="st"><div class="stl">P&L</div><div id="stat-pnl" class="stv">$0.00</div></div>
-  <div class="st"><div class="stl">Perf</div><div id="stat-pct" class="stv">0.00%</div></div>
-  <div class="st"><div class="stl">Cash</div><div id="stat-cash" class="stv">$10,000.00</div></div>
+  <div class="stats">
+    <div class="st"><div class="stl">Equity</div><div id="stat-equity" class="stv">$10,000.00</div></div>
+    <div class="st"><div class="stl">P&L</div><div id="stat-pnl" class="stv">$0.00</div></div>
+    <div class="st"><div class="stl">Perf</div><div id="stat-pct" class="stv">0.00%</div></div>
+    <div class="st"><div class="stl">Cash</div><div id="stat-cash" class="stv">$10,000.00</div></div>
+  </div>
+
+  <div class="tabbar">
+    <div class="tb on" onclick="sw('ai')">AI Picks</div>
+    <div class="tb" onclick="sw('port')">Portfolio</div>
+    <div class="tb" onclick="sw('hist')">History</div>
+  </div>
+
+  <div class="content">
+    <div id="tab-ai" class="sec on">
+       <div id="ai-list">
+         <div class="card" onclick="openTrade('AAPL', 185.50)">
+           <div style="display:flex; justify-content:space-between; align-items:center;">
+             <div><div class="csym">AAPL</div><div class="cname">Apple Inc.</div></div>
+             <div style="text-align:right;"><div class="stv">$185.50</div><div class="pos" style="font-size:10px;">+1.2%</div></div>
+           </div>
+         </div>
+         <div class="card" onclick="openTrade('NVDA', 820.10)">
+           <div style="display:flex; justify-content:space-between; align-items:center;">
+             <div><div class="csym">NVDA</div><div class="cname">NVIDIA Corp.</div></div>
+             <div style="text-align:right;"><div class="stv">$820.10</div><div class="pos" style="font-size:10px;">+3.4%</div></div>
+           </div>
+         </div>
+       </div>
+    </div>
+    <div id="tab-port" class="sec"><div id="port-list"></div></div>
+    <div id="tab-hist" class="sec"><div id="hist-list"></div></div>
+  </div>
 </div>
 
-<div id="portfolio-list">
-  <div class="card">
-    <div style="font-weight:bold;">AAPL</div>
-    <div style="font-size:11px; color:#666;">Sample Position</div>
-    <button class="btn" style="background:var(--green); color:white;" onclick="buy('AAPL', 150)">Buy 10 Shares @ $150</button>
+<div id="modal-bg" class="modal-bg" onclick="closeTrade()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div id="m-sym" class="csym" style="font-size: 24px;">SYMBOL</div>
+    <div id="m-price" style="font-size: 28px; font-weight:800; margin: 8px 0;">$0.00</div>
+    <div class="trade-btns">
+      <button class="btn btn-buy" onclick="doTrade('buy')">Buy Long</button>
+      <button class="btn btn-sell" onclick="doTrade('sell')">Sell / Close</button>
+    </div>
   </div>
 </div>
 
 <script>
 let cash = 10000, capital = 10000, longs = {}, tradeHistory = [];
-let prices = { "AAPL": 155 }; // Current market price is $155
+let prices = {"AAPL": 185.50, "NVDA": 820.10, "TSLA": 175.20};
+let curSym = "", curPrice = 0;
+
+function sw(t) {
+  document.querySelectorAll('.sec').forEach(s => s.classList.remove('on'));
+  document.querySelectorAll('.tb').forEach(b => b.classList.remove('on'));
+  document.getElementById('tab-' + t).classList.add('on');
+  event.currentTarget.classList.add('on');
+  if(t === 'port') renderPortfolio();
+}
 
 function updateStats() {
   let marketValue = 0;
-  for (let s in longs) {
-    marketValue += (prices[s] || 0) * longs[s];
-  }
-
+  for (let s in longs) { marketValue += (prices[s] || 0) * longs[s]; }
+  
   const equity = cash + marketValue;
   const pnl = equity - capital;
   const pct = (pnl / capital) * 100;
 
-  document.getElementById('stat-equity').innerText = "$" + equity.toLocaleString();
-  document.getElementById('stat-cash').innerText = "$" + cash.toLocaleString();
+  document.getElementById('stat-equity').textContent = '$' + equity.toLocaleString(undefined, {minimumFractionDigits:2});
+  document.getElementById('stat-cash').textContent = '$' + cash.toLocaleString(undefined, {minimumFractionDigits:2});
   
   const pnlEl = document.getElementById('stat-pnl');
-  pnlEl.innerText = (pnl >= 0 ? "+" : "") + "$" + pnl.toLocaleString();
-  pnlEl.className = "stv " + (pnl >= 0 ? "pos" : "neg");
+  pnlEl.textContent = (pnl >= 0 ? '+' : '') + '$' + pnl.toLocaleString(undefined, {minimumFractionDigits:2});
+  pnlEl.className = 'stv ' + (pnl >= 0 ? 'pos' : 'neg');
 
   const pctEl = document.getElementById('stat-pct');
-  pctEl.innerText = (pnl >= 0 ? "+" : "") + pct.toFixed(2) + "%";
-  pctEl.className = "stv " + (pnl >= 0 ? "pos" : "neg");
+  pctEl.textContent = (pnl >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+  pctEl.className = 'stv ' + (pnl >= 0 ? 'pos' : 'neg');
 }
 
-function buy(sym, price) {
-  if (cash >= price * 10) {
-    cash -= price * 10;
-    longs[sym] = (longs[sym] || 0) + 10;
-    updateStats();
-    alert("Bought 10 shares of " + sym);
+function openTrade(s, p) {
+  curSym = s; curPrice = p;
+  document.getElementById('m-sym').textContent = s;
+  document.getElementById('m-price').textContent = '$' + p.toFixed(2);
+  document.getElementById('modal-bg').classList.add('on');
+}
+
+function closeTrade() { document.getElementById('modal-bg').classList.remove('on'); }
+
+function doTrade(type) {
+  const qty = 10;
+  const total = curPrice * qty;
+
+  if (type === 'buy') {
+    if (cash < total) return alert("Insufficient Cash");
+    cash -= total;
+    longs[curSym] = (longs[curSym] || 0) + qty;
+    tradeHistory.push({sym: curSym, type: 'BUY', price: curPrice, qty: qty, time: new Date().toLocaleTimeString()});
+  } else {
+    if (!longs[curSym] || longs[curSym] < qty) return alert("No position to sell");
+    cash += total;
+    longs[curSym] -= qty;
+    tradeHistory.push({sym: curSym, type: 'SELL', price: curPrice, qty: qty, time: new Date().toLocaleTimeString()});
   }
+  updateStats();
+  closeTrade();
+  renderPortfolio();
 }
 
-// Initial Run
+function renderPortfolio() {
+  const el = document.getElementById('port-list');
+  let html = '';
+  for (let s in longs) {
+    if (longs[s] > 0) {
+      html += `<div class="card">
+        <div style="display:flex; justify-content:space-between;">
+          <div><div class="csym">${s}</div><div class="cname">${longs[s]} Shares</div></div>
+          <div style="text-align:right;"><div class="stv">$${(longs[s] * prices[s]).toFixed(2)}</div></div>
+        </div>
+      </div>`;
+    }
+  }
+  el.innerHTML = html || '<div style="text-align:center; color:var(--text3); padding:40px;">No open positions</div>';
+}
+
 updateStats();
 </script>
 </body>
