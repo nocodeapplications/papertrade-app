@@ -1,80 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-<title>PaperTrade — AI Day Trading</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>PaperTrade</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
 <style>
-  :root {
-    --bg: #FAFAFA; --bg2: #F4F4F4; --bg3: #EBEBEB; --bg4: #DCDCDC;
-    --border: rgba(0,0,0,0.07); --text: #111111; --text2: #555555; --text3: #999999;
-    --green: #1a7a4a; --red: #c0243a; --accent: #3d35c8; --radius: 10px;
-    --font-display: 'Syne', sans-serif; --font-mono: 'Space Mono', monospace;
-  }
+  :root { --bg: #FAFAFA; --bg2: #F4F4F4; --border: rgba(0,0,0,0.07); --text: #111; --green: #1a7a4a; --red: #c0243a; --font-display: 'Syne', sans-serif; --font-mono: 'Space Mono', monospace; }
+  [data-theme="dark"] { --bg: #111; --bg2: #1A1A1A; --text: #EEE; --border: rgba(255,255,255,0.1); }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: var(--font-mono); font-size: 13px; overflow-x: hidden; padding-bottom: 80px; }
-  
-  /* Header & Stats */
+  body { background: var(--bg); color: var(--text); font-family: var(--font-mono); font-size: 13px; padding-bottom: 80px; transition: 0.3s; }
   .hdr { padding: 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: var(--bg); z-index: 10; }
   .logo { font-family: var(--font-display); font-size: 20px; font-weight: 800; }
   .stats { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--border); border-bottom: 1px solid var(--border); }
   .st { background: var(--bg); padding: 12px 8px; border-right: 1px solid var(--border); }
-  .stl { font-size: 9px; color: var(--text3); text-transform: uppercase; margin-bottom: 4px; font-weight: 700; }
-  .stv { font-size: 11px; font-weight: 700; }
+  .stl { font-size: 9px; color: #999; text-transform: uppercase; font-weight: 700; }
+  .stv { font-size: 10px; font-weight: 700; }
   .pos { color: var(--green); } .neg { color: var(--red); }
-
-  /* Content Sections */
-  .sec { display: none; padding: 16px; }
-  .sec.on { display: block; }
-  h2 { font-family: var(--font-display); font-size: 18px; margin-bottom: 16px; }
-
-  /* Navigation Bar (Fixed Bottom) */
-  .nav { position: fixed; bottom: 0; width: 100%; max-width: 420px; left: 50%; transform: translateX(-50%); display: flex; background: var(--bg2); border-top: 1px solid var(--border); z-index: 100; padding: 8px 0; }
-  .nit { flex: 1; text-align: center; cursor: pointer; color: var(--text3); }
+  .nav { position: fixed; bottom: 0; width: 100%; max-width: 420px; left: 50%; transform: translateX(-50%); display: flex; background: var(--bg2); border-top: 1px solid var(--border); z-index: 100; padding: 10px 0; }
+  .nit { flex: 1; text-align: center; cursor: pointer; color: #999; }
   .nit.on { color: var(--green); }
   .nic { font-size: 18px; display: block; }
-  .nlb { font-size: 9px; font-weight: 700; text-transform: uppercase; }
-
-  /* Cards */
-  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; cursor: pointer; }
-  .csym { font-weight: 800; font-size: 15px; font-family: var(--font-display); }
+  .nlb { font-size: 8px; font-weight: 800; text-transform: uppercase; }
+  .sec { display: none; padding: 16px; }
+  .sec.on { display: block; }
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 10px; }
 </style>
 </head>
-<body>
-
-<div class="hdr">
-  <div class="logo">PaperTrade</div>
-  <div id="user-badge" style="font-size:10px; background:var(--bg3); padding:4px 10px; border-radius:15px;">Live Data</div>
-</div>
-
-<div class="stats">
-  <div class="st"><div class="stl">Equity</div><div id="stat-equity" class="stv">$10,000.00</div></div>
-  <div class="st"><div class="stl">P&L</div><div id="stat-pnl" class="stv">$0.00</div></div>
-  <div class="st"><div class="stl">Perf</div><div id="stat-pct" class="stv">0.00%</div></div>
-  <div class="st"><div class="stl">Cash</div><div id="stat-cash" class="stv">$10,000.00</div></div>
-</div>
-
-<div class="content">
-  <div id="tab-ai" class="sec on"><h2>AI Picks</h2><div id="ai-list"></div></div>
-  <div id="tab-crypto" class="sec"><h2>Crypto</h2><div id="crypto-list"></div></div>
-  <div id="tab-market" class="sec"><h2>Market</h2><div id="market-list"></div></div>
-  <div id="tab-port" class="sec"><h2>Portfolio</h2><div id="port-list"></div></div>
-  <div id="tab-hist" class="sec"><h2>History</h2><div id="hist-list"></div></div>
-</div>
-
-<nav class="nav">
-  <div class="nit on" onclick="sw('ai')"><span class="nic">★</span><span class="nlb">AI Picks</span></div>
-  <div class="nit" onclick="sw('crypto')"><span class="nic">◈</span><span class="nlb">Crypto</span></div>
-  <div class="nit" onclick="sw('market')"><span class="nic">▦</span><span class="nlb">Market</span></div>
-  <div class="nit" onclick="sw('port')"><span class="nic">◆</span><span class="nlb">Portfolio</span></div>
-  <div class="nit" onclick="sw('hist')"><span class="nic">↺</span><span class="nlb">History</span></div>
-</nav>
-
+<body data-theme="light">
+  <div class="hdr"><div class="logo">PaperTrade</div><div onclick="toggleTheme()" style="cursor:pointer">◑</div></div>
+  <div class="stats">
+    <div class="st"><div class="stl">Equity</div><div id="stat-equity" class="stv">$10,000.00</div></div>
+    <div class="st"><div class="stl">P&L</div><div id="stat-pnl" class="stv">$0.00</div></div>
+    <div class="st"><div class="stl">Perf</div><div id="stat-pct" class="stv">0.00%</div></div>
+    <div class="st"><div class="stl">Cash</div><div id="stat-cash" class="stv">$10,000.00</div></div>
+  </div>
+  <div class="content">
+    <div id="tab-ai" class="sec on"><div id="ai-list"></div></div>
+    <div id="tab-crypto" class="sec"><h2>Crypto</h2><div id="crypto-list"></div></div>
+    <div id="tab-market" class="sec"><h2>Stocks</h2><div id="market-list"></div></div>
+    <div id="tab-port" class="sec"><h2>Portfolio</h2><div id="port-list"></div></div>
+    <div id="tab-hist" class="sec"><h2>History</h2><div id="hist-list"></div></div>
+  </div>
+  <nav class="nav">
+    <div class="nit on" onclick="sw('ai')"><span class="nic">★</span><span class="nlb">AI Picks</span></div>
+    <div class="nit" onclick="sw('crypto')"><span class="nic">◈</span><span class="nlb">Crypto</span></div>
+    <div class="nit" onclick="sw('market')"><span class="nic">▦</span><span class="nlb">Market</span></div>
+    <div class="nit" onclick="sw('port')"><span class="nic">◆</span><span class="nlb">Portfolio</span></div>
+    <div class="nit" onclick="sw('hist')"><span class="nic">↺</span><span class="nlb">History</span></div>
+  </nav>
 <script>
 let cash = 10000, capital = 10000, longs = {}, tradeHistory = [];
-let prices = {"AAPL": 185.50, "NVDA": 820.10, "BTC": 65200.00, "ETH": 3500.00};
+let prices = {"BTC": 67450, "ETH": 3450, "NVDA": 880.2, "AAPL": 172.1};
 
 function sw(t) {
   document.querySelectorAll('.sec').forEach(s => s.classList.remove('on'));
@@ -82,39 +58,47 @@ function sw(t) {
   document.getElementById('tab-' + t).classList.add('on');
   event.currentTarget.classList.add('on');
   if(t === 'port') renderPortfolio();
+  if(t === 'hist') renderHistory();
 }
 
 function updateStats() {
-  let mv = 0;
-  for (let s in longs) { mv += (prices[s] || 0) * longs[s]; }
-  const eq = cash + mv;
-  const pnl = eq - capital;
-  const pct = (pnl / capital) * 100;
-
-  document.getElementById('stat-equity').textContent = '$' + eq.toLocaleString(undefined, {minimumFractionDigits:2});
-  document.getElementById('stat-cash').textContent = '$' + cash.toLocaleString(undefined, {minimumFractionDigits:2});
-  
-  const pnlEl = document.getElementById('stat-pnl');
-  pnlEl.textContent = (pnl >= 0 ? '+' : '') + '$' + pnl.toLocaleString(undefined, {minimumFractionDigits:2});
-  pnlEl.className = 'stv ' + (pnl >= 0 ? 'pos' : 'neg');
-
-  const pctEl = document.getElementById('stat-pct');
-  pctEl.textContent = (pnl >= 0 ? '+' : '') + pct.toFixed(2) + '%';
-  pctEl.className = 'stv ' + (pnl >= 0 ? 'pos' : 'neg');
+  let mv = 0; for (let s in longs) mv += (prices[s] || 0) * longs[s];
+  const eq = cash + mv, pnl = eq - capital, pct = (pnl / capital) * 100;
+  document.getElementById('stat-equity').innerText = '$' + eq.toLocaleString();
+  document.getElementById('stat-cash').innerText = '$' + cash.toLocaleString();
+  const pEl = document.getElementById('stat-pnl');
+  pEl.innerText = (pnl >= 0 ? '+' : '') + '$' + pnl.toLocaleString();
+  pEl.className = 'stv ' + (pnl >= 0 ? 'pos' : 'neg');
+  const pcEl = document.getElementById('stat-pct');
+  pcEl.innerText = (pnl >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+  pcEl.className = 'stv ' + (pnl >= 0 ? 'pos' : 'neg');
 }
 
 function renderPortfolio() {
-  const el = document.getElementById('port-list');
-  let html = '';
-  for (let s in longs) {
-    if (longs[s] > 0) {
-      html += `<div class="card"><div class="csym">${s}</div><div>${longs[s]} Shares @ $${prices[s]}</div></div>`;
-    }
-  }
-  el.innerHTML = html || '<p style="color:#999">No open positions.</p>';
+  let h = ''; for (let s in longs) if (longs[s] > 0) h += `<div class="card"><b>${s}</b>: ${longs[s]} units</div>`;
+  document.getElementById('port-list').innerHTML = h || '<p>No positions.</p>';
 }
 
-// Initial Run
+function renderHistory() {
+  document.getElementById('hist-list').innerHTML = tradeHistory.map(th => `<div>${th}</div>`).join('') || '<p>No history.</p>';
+}
+
+function buy(s) {
+  if (cash < prices[s]) return alert("No cash");
+  cash -= prices[s]; longs[s] = (longs[s] || 0) + 1;
+  tradeHistory.unshift(new Date().toLocaleTimeString() + ": Bought " + s); 
+  updateStats(); alert("Bought " + s);
+}
+
+function toggleTheme() {
+  const b = document.body; 
+  b.setAttribute('data-theme', b.getAttribute('data-theme') === 'light' ? 'dark' : 'light');
+}
+
+document.getElementById('ai-list').innerHTML = Object.keys(prices).map(s => `
+  <div class="card" onclick="buy('${s}')"><b>${s}</b><br>AI Signal: Buy @ $${prices[s]}</div>
+`).join('');
+
 updateStats();
 </script>
 </body>
