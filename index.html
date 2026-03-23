@@ -1199,25 +1199,70 @@
     <div class="auth-logo">Paper<span>Trade</span></div>
     <div class="auth-tag">AI-powered day trading simulator</div>
     <div class="auth-box">
+
       <div class="auth-tabs">
         <button class="auth-tab on" id="atab-login" onclick="authTab('login')">Sign in</button>
         <button class="auth-tab" id="atab-register" onclick="authTab('register')">Register</button>
+        <button class="auth-tab" id="atab-reset" onclick="authTab('reset')">Reset</button>
+        <button class="auth-tab" id="atab-find" onclick="authTab('find')">Find user</button>
       </div>
-      <label class="auth-lbl">Username</label>
-      <input class="auth-inp" id="auth-user" type="text" placeholder="your username" autocapitalize="none" autocomplete="username"/>
-      <label class="auth-lbl">Password</label>
-      <input class="auth-inp" id="auth-pass" type="password" placeholder="••••••••" autocomplete="current-password"/>
-      <div id="auth-capital-row" style="display:none;">
+
+      <!-- SIGN IN FORM -->
+      <div id="auth-login-form">
+        <label class="auth-lbl">Username</label>
+        <input class="auth-inp" id="auth-user" type="text" placeholder="your username" autocapitalize="none" autocomplete="username"/>
+        <label class="auth-lbl">Password</label>
+        <input class="auth-inp" id="auth-pass" type="password" placeholder="••••••••" autocomplete="current-password"/>
+        <button class="auth-btn" onclick="doLogin()">Sign in</button>
+      </div>
+
+      <!-- REGISTER FORM -->
+      <div id="auth-register-form" style="display:none;">
+        <label class="auth-lbl">Choose a username</label>
+        <input class="auth-inp" id="reg-user" type="text" placeholder="min 3 characters" autocapitalize="none"/>
+        <label class="auth-lbl">Choose a password</label>
+        <input class="auth-inp" id="reg-pass" type="password" placeholder="min 4 characters"/>
+        <label class="auth-lbl">Security question</label>
+        <select class="auth-inp" id="reg-question" style="cursor:pointer;">
+          <option value="pet">What was your first pet's name?</option>
+          <option value="city">What city were you born in?</option>
+          <option value="school">What was your primary school name?</option>
+          <option value="mother">What is your mother's maiden name?</option>
+          <option value="car">What was your first car?</option>
+        </select>
+        <label class="auth-lbl">Security answer</label>
+        <input class="auth-inp" id="reg-answer" type="text" placeholder="answer (not case sensitive)"/>
         <label class="auth-lbl">Starting capital ($)</label>
         <input class="auth-inp" id="auth-capital" type="number" placeholder="10000" min="100" value="10000"/>
+        <button class="auth-btn" onclick="doRegister()">Create account</button>
       </div>
-      <button class="auth-btn" id="auth-submit" onclick="doAuth()">Sign in</button>
+
+      <!-- RESET PASSWORD FORM -->
+      <div id="auth-reset-form" style="display:none;">
+        <p style="font-size:12px;color:var(--text3);font-family:var(--font-display);margin-bottom:12px;line-height:1.6;">Answer your security question to reset your password.</p>
+        <label class="auth-lbl">Username</label>
+        <input class="auth-inp" id="reset-user" type="text" placeholder="your username" autocapitalize="none" oninput="showResetQuestion()"/>
+        <div id="reset-question-row" style="display:none;">
+          <label class="auth-lbl" id="reset-q-label">Security question</label>
+          <input class="auth-inp" id="reset-answer" type="text" placeholder="your answer"/>
+          <label class="auth-lbl">New password</label>
+          <input class="auth-inp" id="reset-newpass" type="password" placeholder="min 4 characters"/>
+        </div>
+        <button class="auth-btn" onclick="doPasswordReset()">Reset password</button>
+      </div>
+
+      <!-- FIND USERNAME FORM -->
+      <div id="auth-find-form" style="display:none;">
+        <p style="font-size:12px;color:var(--text3);font-family:var(--font-display);margin-bottom:12px;line-height:1.6;">All accounts registered in this browser. Click a name to auto-fill the sign in form.</p>
+        <div id="find-users-list" style="background:var(--bg3);border-radius:var(--radius);padding:10px 12px;min-height:40px;"></div>
+      </div>
+
       <div class="auth-err" id="auth-err"></div>
       <div class="auth-hint" id="auth-hint">Loading...</div>
     </div>
   </div>
 
-  <!-- CAPITAL MODAL -->
+    <!-- CAPITAL MODAL -->
   <div class="cap-modal" id="cap-modal">
     <div class="cap-box">
       <div class="cap-title">Add / withdraw capital</div>
@@ -1905,88 +1950,77 @@ const si = document.getElementById('sinput');
 const sd = document.getElementById('sdrop');
 let searchTimer = null;
 
-si.addEventListener('input', () => {
-  const q = si.value.trim();
+si.addEventListener('input', function() {
+  var q = si.value.trim();
   if (!q) { sd.style.display = 'none'; return; }
-  const qu = q.toUpperCase();
-
-  // First show local matches instantly
-  const local = UNIVERSE.filter(s =>
-    s.sym.startsWith(qu) || s.name.toUpperCase().includes(qu) || (s.ticker && s.ticker.startsWith(qu))
-  ).slice(0, 6);
-
+  var qu = q.toUpperCase();
+  var local = UNIVERSE.filter(function(s) {
+    return s.sym.startsWith(qu) || s.name.toUpperCase().includes(qu) || (s.ticker && s.ticker.startsWith(qu));
+  }).slice(0, 8);
   if (local.length) {
-    sd.innerHTML = local.map(s =>
-      '<div class="sdi" onclick="pickS('' + (s.sym) + '')">' +
-      '<span class="sym">' + (s.ticker || s.sym) + '</span>' +
-      '<span class="nm">' + s.name + '</span></div>'
-    ).join('');
+    var html = '';
+    for (var i=0; i<local.length; i++) {
+      var s = local[i];
+      html += '<div class="sdi" onclick="pickS(this.dataset.sym)" data-sym="' + s.sym + '">';
+      html += '<span class="sym">' + (s.ticker || s.sym) + '</span>';
+      html += '<span class="nm">' + s.name + '</span></div>';
+    }
+    sd.innerHTML = html;
     sd.style.display = 'block';
   } else {
-    // Show a "Search Yahoo Finance" option for unknown tickers
-    sd.innerHTML = '<div class="sdi" onclick="lookupTicker('' + qu + '')" style="color:var(--accent);">' +
-      '<span class="sym">' + qu + '</span>' +
-      '<span class="nm">Search Yahoo Finance →</span></div>';
+    sd.innerHTML = '<div class="sdi" onclick="lookupTicker(this.dataset.sym)" data-sym="' + qu + '" style="color:var(--accent);"><span class="sym">' + qu + '</span><span class="nm">Search Yahoo Finance →</span></div>';
     sd.style.display = 'block';
   }
-
-  // Debounced live lookup for any ticker
   clearTimeout(searchTimer);
   if (q.length >= 1) {
-    searchTimer = setTimeout(() => liveSearch(q), 600);
+    searchTimer = setTimeout(function() { liveSearch(q); }, 700);
   }
 });
 
 async function liveSearch(q) {
-  const qu = q.toUpperCase().trim();
-  // Try to fetch price for this ticker directly
+  var qu = q.toUpperCase().trim();
+  if (UNIVERSE.find(function(x) { return x.sym === qu; })) return;
   try {
-    const p = await fetchPrice(qu);
+    var p = await fetchPrice(qu);
     if (p && p.price) {
-      // It's a valid ticker — add to dropdown
-      const existing = UNIVERSE.find(x => x.sym === qu);
-      if (!existing) {
-        const name = qu; // We'll use the symbol as name if unknown
-        sd.innerHTML = '<div class="sdi" onclick="pickS('' + qu + '')">' +
-          '<span class="sym">' + qu + '</span>' +
-          '<span class="nm">$' + p.price.toFixed(2) + ' · Tap to trade</span></div>';
+      var html = '<div class="sdi" onclick="pickS(this.dataset.sym)" data-sym="' + qu + '">';
+      html += '<span class="sym">' + qu + '</span>';
+      html += '<span class="nm">$' + p.price.toFixed(2) + ' · Tap to trade</span></div>';
+      if (si.value.toUpperCase().trim() === qu) {
+        sd.innerHTML = html;
         sd.style.display = 'block';
       }
     }
-  } catch {}
+  } catch(e) {}
 }
 
 async function lookupTicker(sym) {
-  si.value = sym;
-  sd.innerHTML = '<div class="sdi"><span class="sym">Loading ' + sym + '...</span></div>';
-  const p = await fetchPrice(sym);
+  sd.innerHTML = '<div class="sdi"><span class="sym">Looking up ' + sym + '...</span></div>';
+  var p = await fetchPrice(sym);
   if (p && p.price) {
     sd.style.display = 'none';
     si.value = '';
-    // Add to UNIVERSE if not there
-    if (!UNIVERSE.find(x => x.sym === sym)) {
+    if (!UNIVERSE.find(function(x) { return x.sym === sym; })) {
       STOCKS.push({ sym: sym, name: sym });
       UNIVERSE.push({ sym: sym, name: sym });
     }
     if (!prices[sym]) prices[sym] = p;
     openMod(sym);
   } else {
-    sd.innerHTML = '<div class="sdi"><span class="sym" style="color:var(--red);">Symbol not found: ' + sym + '</span></div>';
-    sd.style.display = 'block';
+    sd.innerHTML = '<div class="sdi"><span class="sym" style="color:var(--red);">Not found: ' + sym + '</span></div>';
   }
 }
 
-document.addEventListener('click', e => {
+document.addEventListener('click', function(e) {
   if (!e.target.closest('#sinput') && !e.target.closest('#sdrop')) sd.style.display = 'none';
 });
 
 async function pickS(sym) {
   si.value = '';
   sd.style.display = 'none';
-  // Add to UNIVERSE if not there
-  if (!UNIVERSE.find(x => x.sym === sym)) {
-    STOCKS.push({ sym, name: sym });
-    UNIVERSE.push({ sym, name: sym });
+  if (!UNIVERSE.find(function(x) { return x.sym === sym; })) {
+    STOCKS.push({ sym: sym, name: sym });
+    UNIVERSE.push({ sym: sym, name: sym });
   }
   openMod(sym);
 }
@@ -2021,16 +2055,20 @@ function saveUserData() {
   } catch {}
 }
 
+// ── Switch auth tab ──
 function authTab(t) {
-  document.getElementById('atab-login').classList.toggle('on', t === 'login');
-  document.getElementById('atab-register').classList.toggle('on', t === 'register');
-  document.getElementById('auth-submit').textContent = t === 'login' ? 'Sign in' : 'Create account';
-  document.getElementById('auth-capital-row').style.display = t === 'register' ? 'block' : 'none';
+  ['login','register','reset','find'].forEach(function(tab) {
+    var tabEl = document.getElementById('atab-' + tab);
+    var formEl = document.getElementById('auth-' + tab + '-form');
+    if (tabEl) tabEl.classList.toggle('on', tab === t);
+    if (formEl) formEl.style.display = tab === t ? 'block' : 'none';
+  });
   document.getElementById('auth-err').textContent = '';
+  if (t === 'find') renderFindUsers();
 }
 
-function doAuth() {
-  const isLogin = document.getElementById('atab-login').classList.contains('on');
+// ── Sign In ──
+function doLogin() {
   const username = document.getElementById('auth-user').value.trim().toLowerCase();
   const password = document.getElementById('auth-pass').value;
   const errEl = document.getElementById('auth-err');
@@ -2038,28 +2076,95 @@ function doAuth() {
   if (!username || username.length < 3) { errEl.textContent = 'Username must be at least 3 characters.'; return; }
   if (!password || password.length < 4) { errEl.textContent = 'Password must be at least 4 characters.'; return; }
   const users = getUsers();
-  if (!isLogin) {
-    if (users[username]) { errEl.textContent = 'Username already taken.'; return; }
-    const startCap = parseFloat(document.getElementById('auth-capital').value) || 10000;
-    users[username] = { pw: btoa(password), created: Date.now() };
-    saveUsers(users);
-    const d = loadUserData(username);
-    d.cash = startCap; d.capital = startCap;
-    // Log initial deposit to history
-    d.tradeHistory = [{
-      type: 'deposit',
-      amount: startCap,
-      newCapital: startCap,
-      previousCapital: 0,
-      date: new Date().toLocaleDateString()
-    }];
-    localStorage.setItem('pt_user_' + username, JSON.stringify(d));
-  } else {
-    if (!users[username]) { errEl.textContent = 'User not found.'; return; }
-    if (users[username].pw !== btoa(password)) { errEl.textContent = 'Incorrect password.'; return; }
-  }
+  if (!users[username]) { errEl.textContent = 'User not found. Check username or register.'; return; }
+  if (users[username].pw !== btoa(password)) { errEl.textContent = 'Incorrect password.'; return; }
   loginUser(username);
 }
+
+// ── Register ──
+function doRegister() {
+  const username = document.getElementById('reg-user').value.trim().toLowerCase();
+  const password = document.getElementById('reg-pass').value;
+  const question = document.getElementById('reg-question').value;
+  const answer = document.getElementById('reg-answer').value.trim().toLowerCase();
+  const startCap = parseFloat(document.getElementById('auth-capital').value) || 10000;
+  const errEl = document.getElementById('auth-err');
+  errEl.textContent = '';
+  if (!username || username.length < 3) { errEl.textContent = 'Username must be at least 3 characters.'; return; }
+  if (!password || password.length < 4) { errEl.textContent = 'Password must be at least 4 characters.'; return; }
+  if (!answer) { errEl.textContent = 'Please provide a security answer.'; return; }
+  const users = getUsers();
+  if (users[username]) { errEl.textContent = 'Username already taken — try another.'; return; }
+  users[username] = { pw: btoa(password), question: question, answer: btoa(answer), created: Date.now() };
+  saveUsers(users);
+  const d = loadUserData(username);
+  d.cash = startCap; d.capital = startCap;
+  localStorage.setItem('pt_user_' + username, JSON.stringify(d));
+  loginUser(username);
+}
+
+// ── Password Reset ──
+function showResetQuestion() {
+  const username = document.getElementById('reset-user').value.trim().toLowerCase();
+  const users = getUsers();
+  const qRow = document.getElementById('reset-question-row');
+  const qLabel = document.getElementById('reset-q-label');
+  if (users[username] && users[username].question) {
+    const questions = { pet: "What was your first pet's name?", city: "What city were you born in?", school: "What was your primary school name?", mother: "What is your mother's maiden name?", car: "What was your first car?" };
+    qLabel.textContent = questions[users[username].question] || 'Security question';
+    qRow.style.display = 'block';
+  } else {
+    qRow.style.display = 'none';
+  }
+}
+
+function doPasswordReset() {
+  const username = document.getElementById('reset-user').value.trim().toLowerCase();
+  const answer = document.getElementById('reset-answer').value.trim().toLowerCase();
+  const newpass = document.getElementById('reset-newpass').value;
+  const errEl = document.getElementById('auth-err');
+  errEl.textContent = '';
+  const users = getUsers();
+  if (!users[username]) { errEl.textContent = 'User not found.'; return; }
+  if (!newpass || newpass.length < 4) { errEl.textContent = 'New password must be at least 4 characters.'; return; }
+  if (!users[username].answer) { errEl.textContent = 'No security question set for this account.'; return; }
+  if (atob(users[username].answer) !== answer) { errEl.textContent = 'Security answer is incorrect.'; return; }
+  users[username].pw = btoa(newpass);
+  saveUsers(users);
+  errEl.style.color = 'var(--green)';
+  errEl.textContent = 'Password reset! You can now sign in.';
+  setTimeout(function() {
+    errEl.style.color = '';
+    errEl.textContent = '';
+    authTab('login');
+    document.getElementById('auth-user').value = username;
+  }, 2000);
+}
+
+// ── Find Username ──
+function renderFindUsers() {
+  const users = getUsers();
+  const el = document.getElementById('find-users-list');
+  const names = Object.keys(users);
+  if (!names.length) {
+    el.innerHTML = '<div style="color:var(--text3);font-size:12px;font-family:var(--font-display);">No accounts registered yet.</div>';
+    return;
+  }
+  el.innerHTML = names.map(function(u) {
+    return '<div onclick="fillUsername(this.dataset.u)" data-u="' + u + '" style="padding:8px 10px;margin-bottom:4px;background:var(--bg2);border-radius:var(--radius);cursor:pointer;font-family:var(--font-mono);font-size:13px;color:var(--text);border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">' +
+      '<span>' + u + '</span>' +
+      '<span style="font-size:11px;color:var(--accent);font-family:var(--font-display);">Use this →</span>' +
+      '</div>';
+  }).join('');
+}
+
+function fillUsername(u) {
+  authTab('login');
+  document.getElementById('auth-user').value = u;
+  document.getElementById('auth-pass').focus();
+}
+
+function fetchPrice(sym) { return fp(sym); }
 
 function loginUser(username) {
   currentUser = username;
@@ -2079,6 +2184,7 @@ function loginUser(username) {
   setTheme(currentTheme);
   updateStats();
   updateAuthHint();
+  loadAIPicks();
 }
 
 function signOut() {
@@ -2093,68 +2199,18 @@ function signOut() {
   document.getElementById('auth-user').value = '';
   document.getElementById('auth-pass').value = '';
   document.getElementById('auth-err').textContent = '';
+  authTab('login');
 }
 
 function updateAuthHint() {
   const count = Object.keys(getUsers()).length;
   const el = document.getElementById('auth-hint');
   if (el) el.textContent = count === 0
-    ? 'Be the first — create an account above'
+    ? 'No accounts yet — register above'
     : count + ' trader' + (count !== 1 ? 's' : '') + ' registered · Data saved in this browser';
 }
 
-function openCapModal() {
-  document.getElementById('cap-inp').value = capital;
-  document.getElementById('cap-modal').classList.add('on');
-}
 
-function saveCapital() {
-  const val = parseFloat(document.getElementById('cap-inp').value);
-  if (!val || val < 100) return;
-
-  const oldCapital = capital;
-  const diff = val - oldCapital;
-  const amountUsed = oldCapital - cash;
-  const newCash = Math.max(0, val - amountUsed);
-
-  if (diff !== 0) {
-    const eventType = diff > 0 ? 'deposit' : 'withdrawal';
-    tradeHistory.push({
-      type: eventType,
-      amount: diff,
-      oldCapital: oldCapital,
-      newCapital: val,
-      date: new Date().toLocaleDateString(),
-      time: new Date().toLocaleTimeString()
-    });
-  }
-
-  capital = val;
-  cash = newCash;
-  saveUserData();
-  updateStats();
-  renderHistory();
-  document.getElementById('cap-modal').classList.remove('on');
-  const changeStr = diff > 0
-    ? 'Deposited +$' + diff.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})
-    : 'Withdrew -$' + Math.abs(diff).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
-  toast(changeStr + ' · Capital now $' + val.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}));
-}
-
-
-function getOITier(sym) {
-  const high = ['AAPL','MSFT','TSLA','AMZN','GOOGL','NVDA','META'];
-  const med  = ['NFLX','AMD','INTC','JPM','V','CRM','PYPL','UBER','BABA','PLTR','COIN','DIS','SPOT'];
-  if (high.includes(sym)) return 'High';
-  if (med.includes(sym))  return 'Medium';
-  return 'Low';
-}
-
-function oiPill(sym) {
-  const tier = getOITier(sym);
-  const cls = tier === 'High' ? 'oi-vh' : tier === 'Medium' ? 'oi-m' : 'oi-l';
-  return '<span class="oi-badge ' + cls + '">' + tier + ' OI</span>';
-}
 
 // ─── INIT ──────────────────────────────────────────────────
 async function init() {
@@ -2167,7 +2223,7 @@ async function init() {
   if (session && getUsers()[session]) {
     loginUser(session);
   }
-  fetchAll().then(() => { renderMarket(); updateStats(); loadAIPicks(); });
+  fetchAll().then(() => { renderMarket(); updateStats(); });
 }
 
 init();
