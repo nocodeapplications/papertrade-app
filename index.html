@@ -1609,11 +1609,11 @@ function updateStats() {
     const sp = shortPos[s]; return a + sp.qty * (sp.entryPrice - (prices[s]?.price || sp.entryPrice));
   }, 0);
   const pnl = (cash + lv + sv) - capital;
-  document.getElementById('s-total').textContent = '$' + (cash + lv).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  document.getElementById('s-total').textContent = '$' + (cash + lv + sv).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
   document.getElementById('s-long').textContent = '$' + lv.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
-  document.getElementById('s-short').textContent = (sv >= 0 ? '+' : '') + '$' + Math.abs(Math.round(sv)).toLocaleString();
+  document.getElementById('s-short').textContent = (sv >= 0 ? '+$' : '-$') + Math.abs(sv).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
   const pe = document.getElementById('s-pnl');
-  pe.textContent = (pnl >= 0 ? '+' : '') + '$' + Math.abs(pnl).toFixed(2);
+  pe.textContent = (pnl >= 0 ? '+$' : '-$') + Math.abs(pnl).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
   pe.className = 'stv ' + (pnl >= 0 ? 'pos' : 'neg');
   document.getElementById('cash-pill').textContent = '$' + cash.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
 }
@@ -1957,11 +1957,20 @@ function openCapModal() {
 function saveCapital() {
   const val = parseFloat(document.getElementById('cap-inp').value);
   if (!val || val < 100) return;
+  // Calculate how much has been invested so far
+  const invested = Object.keys(longs).filter(s => longs[s] > 0)
+    .reduce((a, s) => a + (prices[s]?.price || 0) * longs[s], 0);
+  const shortMargin = Object.keys(shortPos).filter(s => shortPos[s]?.qty > 0)
+    .reduce((a, s) => a + (shortPos[s].margin || 0), 0);
+  const amountUsed = capital - cash; // how much has been spent from original capital
+  // Set new cash = new capital minus what was already spent
+  const newCash = val - amountUsed;
   capital = val;
+  cash = Math.max(0, newCash);
   saveUserData();
   updateStats();
   document.getElementById('cap-modal').classList.remove('on');
-  toast('Capital updated to $' + val.toLocaleString());
+  toast('Capital updated to $' + val.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}));
 }
 
 function getOITier(sym) {
