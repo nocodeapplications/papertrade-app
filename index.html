@@ -1056,7 +1056,7 @@
       <div class="disc">AI day-trading recommendations — top 5 buys &amp; top 5 shorts based on today's momentum. Not financial advice.</div>
       <div class="rbar">
         <span class="ts" id="ai-ts">—</span>
-        <button class="rfbtn" onclick="loadAIPicks()">↻ Refresh</button>
+        <button class="rfbtn" onclick="loadAIPicks(true)">↻ Force Refresh</button>
       </div>
       <div class="divider">Top 5 buys today <span class="g-pill pill">LONG</span></div>
       <div id="ai-buys"><div class="lrow"><div class="spin"></div>Loading buy recommendations...</div></div>
@@ -1401,31 +1401,118 @@ function priceCtx(list) {
   }).join('\n');
 }
 
-async function loadAIPicks() {
-  document.getElementById('ai-buys').innerHTML = '<div class="lrow"><div class="spin"></div>Calculating momentum picks...</div>';
-  document.getElementById('ai-shorts').innerHTML = '<div class="lrow"><div class="spin"></div>Calculating bearish signals...</div>';
-  if (Object.keys(prices).length < 4) await fetchAll();
+function buildRankedList() {
   var ranked = [];
   for (var i=0; i<STOCKS.length; i++) {
     var s = STOCKS[i];
     if (prices[s.sym]) ranked.push({ sym: s.sym, name: s.name, data: prices[s.sym] });
   }
   ranked.sort(function(a,b){ return b.data.pct - a.data.pct; });
-  buyRecs = [];
-  for (var b=0; b<Math.min(5,ranked.length); b++) {
-    var r = ranked[b];
-    var pctStr = (r.data.pct>=0?'+':'') + r.data.pct.toFixed(2) + '%';
-    buyRecs.push({ sym: r.sym, reason: r.sym+' is showing strong upward momentum of '+pctStr+' today. Price action suggests continued buying interest.', exit: 'Consider exiting if price drops more than 1.5% from current level of '+fmtPrice(r.data.price,r.sym), confidence: r.data.pct>2?'High':r.data.pct>0.5?'Medium':'Low' });
+  return ranked;
+}
+
+function makePickEntry(r, type) {
+  var pctStr = (r.data.pct>=0?'+':'') + r.data.pct.toFixed(2) + '%';
+  if (type === 'buy') {
+    return { sym: r.sym, addedAt: Date.now(), reason: r.sym+' is showing strong upward momentum of '+pctStr+' today. Price action suggests continued buying interest.', exit: 'Consider exiting if price drops more than 1.5% from '+fmtPrice(r.data.price,r.sym), confidence: r.data.pct>2?'High':r.data.pct>0.5?'Medium':'Low' };
+  } else {
+    return { sym: r.sym, addedAt: Date.now(), reason: r.sym+' is showing bearish momentum of '+pctStr+' today. Selling pressure appears dominant.', cover: 'Consider covering if price rises more than 1.5% from '+fmtPrice(r.data.price,r.sym), confidence: r.data.pct<-2?'High':r.data.pct<-0.5?'Medium':'Low' };
   }
-  shortRecs = [];
-  for (var sh=ranked.length-1; sh>=Math.max(0,ranked.length-5); sh--) {
-    var rs = ranked[sh];
-    var pctS = (rs.data.pct>=0?'+':'') + rs.data.pct.toFixed(2) + '%';
-    shortRecs.push({ sym: rs.sym, reason: rs.sym+' is showing bearish momentum of '+pctS+' today. Selling pressure appears dominant.', cover: 'Consider covering if price rises more than 1.5% from current level of '+fmtPrice(rs.data.price,rs.sym), confidence: rs.data.pct<-2?'High':rs.data.pct<-0.5?'Medium':'Low' });
+}
+
+async function loadAIPicks(forceRefresh) {
+  document.getElementById('ai-buys').innerHTML = '<div class="lrow"><div class="spin"></div>Calculating momentum picks...</div>';
+  document.getElementById('ai-shorts').innerHTML = '<div class="lrow"><div class="spin"></div>Calculating bearish signals...</div>';
+  if (Object.keys(prices).length < 4) await fetchAll();
+  var ranked = buildRankedList();
+  if (!ranked.length) return;
+
+  var today = new Date().toDateString();
+
+  // If forcing refresh OR no picks set yet, initialise fresh
+  if (forceRefresh || !buyRecs.length) {
+    buyRecs = [];
+    var usedSyms = new Set();
+    for (var b=0; b<ranked.length && buyRecs.length<5; b++) {
+      if (!usedSyms.has(ranked[b].sym)) { buyRecs.push(makePickEntry(ranked[b],'buy')); usedSyms.add(ranked[b].sym); }
+    }
+    shortRecs = [];
+    var usedSymsS = new Set();
+    for (var s2=ranked.length-1; s2>=0 && shortRecs.length<5; s2--) {
+      if (!usedSymsS.has(ranked[s2].sym)) { shortRecs.push(makePickEntry(ranked[s2],'short')); usedSymsS.add(ranked[s2].sym); }
+    }
+  } else {
+    // Keep existing picks — only replace ones that have a CLOSE/COVER signal
+    var closedSyms = getClosedPicks();
+    var buySymsUsed = new Set(buyRecs.map(function(r){ return r.sym; }));
+    var shortSymsUsed = new Set(shortRecs.map(function(r){ return r.sym; }));
+
+    // Replace closed buy picks
+    buyRecs = buyRecs.filter(function(r){ return closedSyms.indexOf(r.sym) < 0; });
+    var newBuyCandidates = ranked.filter(function(r){ return !buySymsUsed.has(r.sym) && closedSyms.indexOf(r.sym) < 0; });
+    var nbi = 0;
+    while (buyRecs.length < 5 && nbi < newBuyCandidates.length) {
+      buyRecs.push(makePickEntry(newBuyCandidates[nbi], 'buy'));
+      nbi++;
+    }
+
+    // Replace closed short picks
+    shortRecs = shortRecs.filter(function(r){ return closedSyms.indexOf(r.sym) < 0; });
+    var newShortCandidates = ranked.filter(function(r){ return !shortSymsUsed.has(r.sym) && closedSyms.indexOf(r.sym) < 0; });
+    var nsi = newShortCandidates.length - 1;
+    while (shortRecs.length < 5 && nsi >= 0) {
+      shortRecs.push(makePickEntry(newShortCandidates[nsi], 'short'));
+      nsi--;
+    }
   }
+
+  savePicksToUserData();
   renderAIBuys();
   renderAIShorts();
-  document.getElementById('ai-ts').textContent = 'Momentum-based - ' + new Date().toLocaleTimeString();
+  document.getElementById('ai-ts').textContent = 'Updated ' + new Date().toLocaleTimeString() + (forceRefresh ? ' (refreshed)' : '');
+}
+
+// Track which symbols have been closed/covered via signals
+var closedPickSymbols = [];
+
+function getClosedPicks() {
+  return closedPickSymbols || [];
+}
+
+function markPickClosed(sym) {
+  if (closedPickSymbols.indexOf(sym) < 0) {
+    closedPickSymbols.push(sym);
+    // Trigger replacement of this pick
+    loadAIPicks(false);
+  }
+}
+
+function savePicksToUserData() {
+  if (!currentUser) return;
+  try {
+    var d = JSON.parse(localStorage.getItem('pt_user_' + currentUser) || '{}');
+    d.buyRecs = buyRecs;
+    d.shortRecs = shortRecs;
+    d.closedPickSymbols = closedPickSymbols;
+    localStorage.setItem('pt_user_' + currentUser, JSON.stringify(d));
+  } catch(e) {}
+}
+
+function loadPicksFromUserData() {
+  if (!currentUser) return false;
+  try {
+    var d = JSON.parse(localStorage.getItem('pt_user_' + currentUser) || '{}');
+    if (d.buyRecs && d.buyRecs.length) {
+      buyRecs = d.buyRecs;
+      shortRecs = d.shortRecs || [];
+      closedPickSymbols = d.closedPickSymbols || [];
+      renderAIBuys();
+      renderAIShorts();
+      document.getElementById('ai-ts').textContent = 'Loaded from session';
+      return true;
+    }
+  } catch(e) {}
+  return false;
 }
 function renderAIBuys() {
   const el = document.getElementById('ai-buys');
@@ -1492,13 +1579,15 @@ async function loadSignals() {
         ? (action === 'CLOSE' ? r.sym + ' is reversing down ' + pct + ' — consider exiting this long pick.' : r.sym + ' buy signal still valid at ' + pct + ' today.')
         : (action === 'COVER' ? r.sym + ' is recovering up ' + pct + ' — consider covering this short pick.' : r.sym + ' short signal still active at ' + pct + ' today.');
       var tag = isBuy ? '<span class="long-tag">BUY PICK</span>' : '<span class="short-tag">SHORT PICK</span>';
+      var isActive = action === 'CLOSE' || action === 'COVER';
       var actionLabel = action === 'CLOSE' ? 'Exit long' : action === 'COVER' ? 'Cover short' : 'Hold';
+      var closeBtn = isActive ? ' <button onclick="event.stopPropagation();markPickClosed(\'' + r.sym + '\')" style="font-size:10px;padding:2px 8px;border-radius:4px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-family:var(--font-display);font-weight:600;margin-left:6px;">Mark Closed</button>' : '';
       ahtml += '<div class="card" onclick="openMod(this.dataset.sym)" data-sym="' + r.sym + '">';
       ahtml += '<div class="card-row"><div><div class="csym">' + r.sym + tag + '</div>';
       ahtml += '<div class="cname">' + getName(r.sym) + '</div></div>';
       ahtml += '<div class="cprice">' + (p ? fmtPrice(p.price, r.sym) : 'N/A') + (pct ? '<br><span class="chg ' + pc + '">' + pct + '</span>' : '') + '</div></div>';
       ahtml += '<div class="reason">' + reason + '</div>';
-      ahtml += '<div class="sig-row">' + oiPill(r.sym) + '<span style="flex:1;"></span><span class="pill ' + ac + '">' + actionLabel + '</span></div></div>';
+      ahtml += '<div class="sig-row">' + oiPill(r.sym) + '<span style="flex:1;"></span><span class="pill ' + ac + '">' + actionLabel + '</span>' + closeBtn + '</div></div>';
     }
     ael.innerHTML = ahtml;
   }
@@ -1664,27 +1753,26 @@ function renderHistory() {
   // ── Summary box ──
   const sumEl = document.getElementById('hist-summary');
   if (sumEl) {
+    const trades = tradeHistory.filter(t => t.type === 'buy' || t.type === 'sell' || t.type === 'short' || t.type === 'cover').length;
     const totalDeposits = tradeHistory.filter(t => t.type === 'deposit').reduce((a, t) => a + Math.abs(t.amount), 0);
     const totalWithdrawals = tradeHistory.filter(t => t.type === 'withdrawal').reduce((a, t) => a + Math.abs(t.amount), 0);
-    const trades = tradeHistory.filter(t => t.type === 'buy' || t.type === 'sell' || t.type === 'short' || t.type === 'cover').length;
-    const lv = Object.keys(longs).filter(s => longs[s] > 0).reduce((a, s) => a + (prices[s]?.price || 0) * longs[s], 0);
-    const sv = Object.keys(shortPos).filter(s => shortPos[s]?.qty > 0).reduce((a, s) => { const sp = shortPos[s]; return a + sp.qty * (sp.entryPrice - (prices[s]?.price || sp.entryPrice)); }, 0);
-    const netPnL = (cash + lv) + sv - capital;
+    const port = calcPortfolio();
+    const lv = port.lv;
+    const sv = port.sv;
+    const netPnL = port.pnl;
     var pnlColor = netPnL >= 0 ? 'var(--green)' : 'var(--red)';
     var pnlStr = (netPnL >= 0 ? '+$' : '-$') + Math.abs(netPnL).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-    var portfolioVal = (cash + lv).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-    sumEl.innerHTML =
-      '<div style="display:flex;flex-wrap:wrap;gap:12px;padding-bottom:4px;">' +
-      '<div style="min-width:110px;"><div style="font-size:10px;color:var(--text3);font-family:var(--font-display);font-weight:600;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:3px;">Starting capital</div>' +
-      '<div style="font-size:14px;font-weight:700;font-family:var(--font-mono);color:var(--text);">$' + capital.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + '</div></div>' +
-      '<div style="min-width:110px;"><div style="font-size:10px;color:var(--text3);font-family:var(--font-display);font-weight:600;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:3px;">Cash available</div>' +
-      '<div style="font-size:14px;font-weight:700;font-family:var(--font-mono);color:var(--text);">$' + cash.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + '</div></div>' +
-      '<div style="min-width:110px;"><div style="font-size:10px;color:var(--text3);font-family:var(--font-display);font-weight:600;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:3px;">Portfolio value</div>' +
-      '<div style="font-size:14px;font-weight:700;font-family:var(--font-mono);color:var(--text);">$' + portfolioVal + '</div></div>' +
-      '<div style="min-width:110px;"><div style="font-size:10px;color:var(--text3);font-family:var(--font-display);font-weight:600;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:3px;">Net P&amp;L</div>' +
-      '<div style="font-size:14px;font-weight:700;font-family:var(--font-mono);color:' + pnlColor + ';">' + pnlStr + '</div></div>' +
-      '<div style="min-width:80px;"><div style="font-size:10px;color:var(--text3);font-family:var(--font-display);font-weight:600;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:3px;">Trades</div>' +
-      '<div style="font-size:14px;font-weight:700;font-family:var(--font-mono);color:var(--text);">' + trades + '</div></div>' +
+    var totalVal = port.total.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    var st = function(lbl,val,col){ return '<div style="min-width:110px;margin-bottom:4px;"><div style="font-size:10px;color:var(--text3);font-family:var(--font-display);font-weight:600;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:2px;">'+lbl+'</div><div style="font-size:13px;font-weight:700;font-family:var(--font-mono);color:'+(col||'var(--text)')+';">'+val+'</div></div>'; };
+    sumEl.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:10px;padding-bottom:4px;">' +
+      st('Net capital', '$'+capital.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})) +
+      st('Cash', '$'+cash.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})) +
+      st('Invested (longs)', '$'+lv.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})) +
+      st('Portfolio total', '$'+totalVal) +
+      st('Net P&amp;L', pnlStr, pnlColor) +
+      st('Deposits', '+$'+totalDeposits.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}), 'var(--green)') +
+      st('Withdrawals', '-$'+totalWithdrawals.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}), 'var(--red)') +
+      st('Trades', trades.toString()) +
       '</div>';
   }
 
@@ -1722,25 +1810,34 @@ function renderHistory() {
   }).join('');
 }
 
-function updateStats() {
-  var lv = Object.keys(longs).filter(function(s){ return longs[s] > 0; })
-    .reduce(function(a,s){ return a + (prices[s] ? prices[s].price : 0) * longs[s]; }, 0);
-  var sv = Object.keys(shortPos).filter(function(s){ return shortPos[s] && shortPos[s].qty > 0; })
-    .reduce(function(a,s){
-      var sp = shortPos[s];
-      return a + sp.qty * (sp.entryPrice - (prices[s] ? prices[s].price : sp.entryPrice));
-    }, 0);
-  // Total portfolio value = cash in hand + current value of long positions + short P&L
-  var portfolioValue = cash + lv;
-  // P&L = portfolio value vs starting capital (net of deposits/withdrawals)
-  var pnl = portfolioValue + sv - capital;
+function calcPortfolio() {
+  // Current market value of all long positions at live prices
+  var lv = 0;
+  Object.keys(longs).forEach(function(s) {
+    if (longs[s] > 0) lv += (prices[s] ? prices[s].price : 0) * longs[s];
+  });
+  // Unrealised P&L on open short positions
+  var sv = 0;
+  Object.keys(shortPos).forEach(function(s) {
+    var sp = shortPos[s];
+    if (sp && sp.qty > 0) sv += sp.qty * (sp.entryPrice - (prices[s] ? prices[s].price : sp.entryPrice));
+  });
+  // Total portfolio value = cash + longs at market + short unrealised
+  var total = cash + lv + sv;
+  // Net P&L = total portfolio - net capital committed
+  // netCapital = capital (tracks total deposited minus total withdrawn)
+  var pnl = total - capital;
+  return { lv: lv, sv: sv, total: total, pnl: pnl };
+}
 
-  document.getElementById('s-total').textContent = '$' + portfolioValue.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-  document.getElementById('s-long').textContent = '$' + lv.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-  document.getElementById('s-short').textContent = (sv >= 0 ? '+$' : '-$') + Math.abs(sv).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+function updateStats() {
+  var r = calcPortfolio();
+  document.getElementById('s-total').textContent = '$' + r.total.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('s-long').textContent = '$' + r.lv.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('s-short').textContent = (r.sv >= 0 ? '+$' : '-$') + Math.abs(r.sv).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   var pe = document.getElementById('s-pnl');
-  pe.textContent = (pnl >= 0 ? '+$' : '-$') + Math.abs(pnl).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-  pe.className = 'stv ' + (pnl >= 0 ? 'pos' : 'neg');
+  pe.textContent = (r.pnl >= 0 ? '+$' : '-$') + Math.abs(r.pnl).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  pe.className = 'stv ' + (r.pnl >= 0 ? 'pos' : 'neg');
   document.getElementById('cash-pill').textContent = '$' + cash.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
 
@@ -2048,19 +2145,26 @@ function saveCapital() {
   if (!val || val < 100) return;
   var oldCapital = capital;
   var diff = val - oldCapital;
-  var amountUsed = oldCapital - cash;
-  var newCash = Math.max(0, val - amountUsed);
+  if (Math.abs(diff) < 0.01) { document.getElementById('cap-modal').classList.remove('on'); return; }
 
-  if (Math.abs(diff) > 0.01) {
-    tradeHistory.push({
-      type: diff > 0 ? 'deposit' : 'withdrawal',
-      amount: diff,
-      oldCapital: oldCapital,
-      newCapital: val,
-      date: new Date().toLocaleDateString(),
-      time: new Date().toLocaleTimeString()
-    });
+  // Adjust cash by the difference (deposit adds cash, withdrawal removes it)
+  var newCash = cash + diff;
+  if (newCash < 0) {
+    document.getElementById('cap-modal').classList.remove('on');
+    toast('Cannot withdraw more than available cash ($' + cash.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + ')');
+    return;
   }
+
+  // Record in history
+  tradeHistory.push({
+    type: diff > 0 ? 'deposit' : 'withdrawal',
+    amount: diff,
+    oldCapital: oldCapital,
+    newCapital: val,
+    cashAfter: newCash,
+    date: new Date().toLocaleDateString(),
+    time: new Date().toLocaleTimeString()
+  });
 
   capital = val;
   cash = newCash;
@@ -2071,7 +2175,7 @@ function saveCapital() {
   var changeStr = diff > 0
     ? 'Deposited +$' + diff.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})
     : 'Withdrew -$' + Math.abs(diff).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-  toast(changeStr + ' · Capital now $' + val.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}));
+  toast(changeStr + ' · Capital: $' + val.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' · Cash: $' + newCash.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}));
 }
 
 // ─── OI TIER HELPER ───────────────────────────────────────
@@ -2114,7 +2218,8 @@ function saveUserData() {
   if (!currentUser) return;
   try {
     localStorage.setItem('pt_user_' + currentUser, JSON.stringify({
-      cash, capital, longs, shortPos, tradeHistory, theme: currentTheme
+      cash, capital, longs, shortPos, tradeHistory, theme: currentTheme,
+      buyRecs, shortRecs, closedPickSymbols
     }));
   } catch {}
 }
@@ -2239,6 +2344,9 @@ function loginUser(username) {
   shortPos = d.shortPos || {};
   tradeHistory = d.tradeHistory || d.history || [];
   currentTheme = d.theme || 'warmgray';
+  buyRecs = d.buyRecs || [];
+  shortRecs = d.shortRecs || [];
+  closedPickSymbols = d.closedPickSymbols || [];
   localStorage.setItem('pt_session', username);
   document.getElementById('auth-overlay').style.display = 'none';
   document.getElementById('user-badge').textContent = username;
@@ -2248,7 +2356,13 @@ function loginUser(username) {
   setTheme(currentTheme);
   updateStats();
   updateAuthHint();
-  loadAIPicks();
+  // Restore picks from previous session or load fresh
+  closedPickSymbols = [];
+  setTimeout(function() {
+    if (!loadPicksFromUserData()) {
+      loadAIPicks(false);
+    }
+  }, 600);
 }
 
 function signOut() {
