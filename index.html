@@ -1143,9 +1143,16 @@
         <span class="qlbl">Shares</span>
         <div class="qctrl">
           <button class="qbtn" onclick="dq(-1)">−</button>
-          <span class="qnum" id="qty-d">1</span>
+          <input type="number" id="qty-d" value="1" min="0.0001" step="0.1" style="font-size:18px;font-weight:700;width:80px;text-align:center;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);padding:4px 6px;font-family:var(--font-mono);" oninput="qty=parseFloat(this.value)||0.0001;updCost()"/>
           <button class="qbtn" onclick="dq(1)">+</button>
         </div>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:10px;">
+        <button onclick="setQty(0.25)" style="flex:1;padding:5px;font-size:11px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg3);color:var(--text2);cursor:pointer;font-family:var(--font-display);font-weight:600;">0.25</button>
+        <button onclick="setQty(0.5)" style="flex:1;padding:5px;font-size:11px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg3);color:var(--text2);cursor:pointer;font-family:var(--font-display);font-weight:600;">0.5</button>
+        <button onclick="setQty(1)" style="flex:1;padding:5px;font-size:11px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg3);color:var(--text2);cursor:pointer;font-family:var(--font-display);font-weight:600;">1</button>
+        <button onclick="setQty(5)" style="flex:1;padding:5px;font-size:11px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg3);color:var(--text2);cursor:pointer;font-family:var(--font-display);font-weight:600;">5</button>
+        <button onclick="setQty(10)" style="flex:1;padding:5px;font-size:11px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--bg3);color:var(--text2);cursor:pointer;font-family:var(--font-display);font-weight:600;">10</button>
       </div>
 
       <div class="crow2">
@@ -1363,7 +1370,7 @@ function renderAIBuys() {
         <div class="cprice">${ps}${pct ? `<br><span class="chg ${pc}">${pct}</span>` : ''}</div>
       </div>
       <div class="reason">${r.reason}</div>
-      <div class="sig-row"><span class="sig-note">Exit: ${r.exit || '—'}</span><span class="pill ${cc}">${r.confidence}</span></div>
+      <div class="sig-row">${oiPill(r.sym)}<span class="sig-note" style="margin:0 6px;">Exit: ${r.exit || '—'}</span><span class="pill ${cc}">${r.confidence}</span></div>
     </div>`;
   }).join('');
 }
@@ -1383,7 +1390,7 @@ function renderAIShorts() {
         <div class="cprice">${ps}${pct ? `<br><span class="chg ${pc}">${pct}</span>` : ''}</div>
       </div>
       <div class="reason">${r.reason}</div>
-      <div class="sig-row"><span class="sig-note">Cover: ${r.cover || '—'}</span><span class="pill ${cc}">${r.confidence}</span></div>
+      <div class="sig-row">${oiPill(r.sym)}<span class="sig-note" style="margin:0 6px;">Cover: ${r.cover || '—'}</span><span class="pill ${cc}">${r.confidence}</span></div>
     </div>`;
   }).join('');
 }
@@ -1602,25 +1609,35 @@ function updateStats() {
     const sp = shortPos[s]; return a + sp.qty * (sp.entryPrice - (prices[s]?.price || sp.entryPrice));
   }, 0);
   const pnl = (cash + lv + sv) - capital;
-  document.getElementById('s-total').textContent = '$' + Math.round(cash + lv).toLocaleString();
-  document.getElementById('s-long').textContent = '$' + Math.round(lv).toLocaleString();
+  document.getElementById('s-total').textContent = '$' + (cash + lv).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  document.getElementById('s-long').textContent = '$' + lv.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
   document.getElementById('s-short').textContent = (sv >= 0 ? '+' : '') + '$' + Math.abs(Math.round(sv)).toLocaleString();
   const pe = document.getElementById('s-pnl');
   pe.textContent = (pnl >= 0 ? '+' : '') + '$' + Math.abs(pnl).toFixed(2);
   pe.className = 'stv ' + (pnl >= 0 ? 'pos' : 'neg');
-  document.getElementById('cash-pill').textContent = '$' + cash.toFixed(2);
+  document.getElementById('cash-pill').textContent = '$' + cash.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
 }
 
 function getName(sym) { return UNIVERSE.find(x => x.sym === sym)?.name || sym; }
 
 function fmtPrice(p, sym) {
-  if (!p) return 'N/A';
+  if (!p && p !== 0) return 'N/A';
   if (sym && sym.includes('-USD')) {
-    if (p > 1000) return '$' + p.toLocaleString(undefined, { maximumFractionDigits: 0 });
-    if (p > 1) return '$' + p.toFixed(2);
+    if (p > 1000) return '$' + p.toLocaleString('en-US', { maximumFractionDigits: 0 });
+    if (p > 1) return '$' + p.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     return '$' + p.toFixed(4);
   }
-  return '$' + p.toFixed(2);
+  return '$' + p.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function fmtNum(n, decimals) {
+  if (n === undefined || n === null) return '0';
+  return n.toLocaleString('en-US', { minimumFractionDigits: decimals || 0, maximumFractionDigits: decimals || 2 });
+}
+
+function fmtQty(q) {
+  if (!q && q !== 0) return '0';
+  return q % 1 === 0 ? q.toString() : q.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 4 });
 }
 
 // ─── TAB SWITCHING ─────────────────────────────────────────
@@ -1644,7 +1661,7 @@ async function openMod(sym) {
   document.getElementById('m-sym').textContent = sym.replace('-USD', '');
   document.getElementById('m-co').textContent = getName(sym);
   document.getElementById('errmsg').textContent = '';
-  document.getElementById('qty-d').textContent = '1';
+  var qel = document.getElementById('qty-d'); if (qel) qel.value = '1';
   let p = prices[sym];
   if (!p) { document.getElementById('m-price').textContent = 'Loading...'; p = await fp(sym); if (p) prices[sym] = p; }
   if (p) document.getElementById('m-price').textContent = fmtPrice(p.price, sym);
@@ -1749,11 +1766,25 @@ function setMode(m) {
   updCost();
 }
 
-function dq(d) { qty = Math.max(1, qty + d); document.getElementById('qty-d').textContent = qty; updCost(); }
+function dq(d) {
+  var step = qty < 1 ? 0.25 : 1;
+  qty = Math.max(0.0001, parseFloat((qty + d * step).toFixed(4)));
+  var el = document.getElementById('qty-d');
+  if (el) el.value = fmtQty(qty);
+  updCost();
+}
+
+function setQty(v) {
+  qty = v;
+  var el = document.getElementById('qty-d');
+  if (el) el.value = fmtQty(v);
+  updCost();
+}
 
 function updCost() {
   const p = prices[curSym]?.price || 0;
-  document.getElementById('c-val').textContent = '$' + (p * qty).toFixed(2);
+  const total = mode === 'short' ? p * qty * 0.5 : p * qty;
+  document.getElementById('c-val').textContent = '$' + total.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
 }
 
 function exec() {
@@ -1763,27 +1794,27 @@ function exec() {
   if (mode === 'buy') {
     if (total > cash) { document.getElementById('errmsg').textContent = 'Insufficient cash.'; return; }
     cash -= total; longs[sym] = (longs[sym] || 0) + qty;
-    tradeHistory.push({ sym, type: 'buy', qty, price: p, total, date: new Date().toLocaleDateString() });
-    toast('Bought ' + qty + ' ' + sym.replace('-USD', '') + ' @ $' + p.toFixed(2));
+    tradeHistory.push({ sym, type: 'buy', qty: parseFloat(qty), price: p, total, date: new Date().toLocaleDateString() });
+    toast('Bought ' + fmtQty(qty) + ' ' + sym.replace('-USD', '') + ' @ $' + fmtPrice(p, sym));
   } else if (mode === 'sell') {
     const own = longs[sym] || 0; if (qty > own) { document.getElementById('errmsg').textContent = 'Only ' + own + ' shares held.'; return; }
     cash += total; longs[sym] -= qty;
-    tradeHistory.push({ sym, type: 'sell', qty, price: p, total, date: new Date().toLocaleDateString() });
-    toast('Sold ' + qty + ' ' + sym.replace('-USD', '') + ' @ $' + p.toFixed(2));
+    tradeHistory.push({ sym, type: 'sell', qty: parseFloat(qty), price: p, total, date: new Date().toLocaleDateString() });
+    toast('Sold ' + fmtQty(qty) + ' ' + sym.replace('-USD', '') + ' @ $' + fmtPrice(p, sym));
   } else if (mode === 'short') {
     const margin = total * 0.5; if (margin > cash) { document.getElementById('errmsg').textContent = 'Insufficient margin (50% required).'; return; }
     cash -= margin;
     if (!shortPos[sym] || shortPos[sym].qty === 0) { shortPos[sym] = { qty, entryPrice: p, margin }; }
     else { const pr = shortPos[sym]; const nq = pr.qty + qty; shortPos[sym] = { qty: nq, entryPrice: (pr.entryPrice * pr.qty + p * qty) / nq, margin: pr.margin + margin }; }
     tradeHistory.push({ sym, type: 'short', qty, price: p, total: margin, date: new Date().toLocaleDateString() });
-    toast('Shorted ' + qty + ' ' + sym.replace('-USD', '') + ' @ $' + p.toFixed(2));
+    toast('Shorted ' + fmtQty(qty) + ' ' + sym.replace('-USD', '') + ' @ $' + fmtPrice(p, sym));
   } else if (mode === 'cover') {
     const sp = shortPos[sym]; if (!sp || sp.qty === 0) { document.getElementById('errmsg').textContent = 'No short position.'; return; }
     if (qty > sp.qty) { document.getElementById('errmsg').textContent = 'Only shorted ' + sp.qty + ' shares.'; return; }
     const pnl = (sp.entryPrice - p) * qty; const mr = (sp.margin / sp.qty) * qty;
     cash += mr + pnl - total; sp.qty -= qty; if (sp.qty === 0) shortPos[sym] = { qty: 0, entryPrice: 0, margin: 0 };
     tradeHistory.push({ sym, type: 'cover', qty, price: p, total, date: new Date().toLocaleDateString() });
-    toast('Covered ' + qty + ' ' + sym.replace('-USD', '') + ' P&L: ' + (pnl >= 0 ? '+' : '') + '$' + pnl.toFixed(2));
+    toast('Covered ' + fmtQty(qty) + ' ' + sym.replace('-USD', '') + ' P&L: ' + (pnl >= 0 ? '+' : '') + '$' + Math.abs(pnl).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}));
   }
   updateStats(); updatePosBadge(); saveUserData(); closeMod();
 }
