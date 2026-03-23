@@ -965,6 +965,45 @@
   ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 4px; }
+
+  /* ── AUTH SCREEN ── */
+  .auth-overlay { position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px; }
+  .auth-logo { font-family:var(--font-display);font-size:30px;font-weight:800;color:var(--text);margin-bottom:6px;letter-spacing:-0.5px; }
+  .auth-logo span { color:var(--logo-accent); }
+  .auth-tag { font-size:12px;color:var(--text3);margin-bottom:28px;font-family:var(--font-display); }
+  .auth-box { background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:24px;width:100%;max-width:340px; }
+  .auth-tabs { display:flex;background:var(--bg3);border-radius:var(--radius);padding:3px;margin-bottom:18px;gap:2px; }
+  .auth-tab { flex:1;text-align:center;padding:8px;font-size:12px;border:none;background:transparent;color:var(--text3);font-family:var(--font-display);font-weight:600;border-radius:8px;cursor:pointer;transition:all 0.15s; }
+  .auth-tab.on { background:var(--bg);color:var(--text);border:1px solid var(--border2); }
+  .auth-lbl { font-size:11px;color:var(--text2);font-family:var(--font-display);font-weight:600;margin-bottom:5px;display:block;text-transform:uppercase;letter-spacing:0.06em; }
+  .auth-inp { width:100%;padding:10px 12px;font-size:13px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--bg);color:var(--text);outline:none;font-family:var(--font-mono);margin-bottom:12px;display:block;transition:border-color 0.15s; }
+  .auth-inp:focus { border-color:var(--accent); }
+  .auth-btn { width:100%;padding:12px;border-radius:var(--radius);border:none;font-size:13px;font-weight:700;background:var(--accent);color:#fff;font-family:var(--font-display);letter-spacing:0.04em;cursor:pointer;margin-top:4px;transition:opacity 0.15s; }
+  .auth-btn:hover { opacity:0.88; }
+  .auth-err { font-size:12px;color:var(--red);margin-top:8px;text-align:center;font-family:var(--font-display);min-height:18px; }
+  .auth-hint { font-size:11px;color:var(--text3);text-align:center;margin-top:14px;font-family:var(--font-display);line-height:1.6; }
+  /* ── CAPITAL MODAL ── */
+  .cap-modal { position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;display:none;align-items:center;justify-content:center;padding:20px; }
+  .cap-modal.on { display:flex; }
+  .cap-box { background:var(--modal-bg-color);border-radius:var(--radius-lg);padding:22px;width:100%;max-width:300px;border:1px solid var(--border2); }
+  .cap-title { font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--text);margin-bottom:14px; }
+  .cap-inp { width:100%;padding:10px 12px;font-size:15px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--bg2);color:var(--text);outline:none;font-family:var(--font-mono);margin-bottom:14px;display:block; }
+  .cap-inp:focus { border-color:var(--accent); }
+  .cap-row { display:flex;gap:8px; }
+  .cap-cancel { flex:1;padding:11px;border-radius:var(--radius);border:1px solid var(--border2);background:transparent;color:var(--text2);font-family:var(--font-display);font-weight:600;font-size:13px;cursor:pointer; }
+  .cap-save { flex:1;padding:11px;border-radius:var(--radius);border:none;background:var(--accent);color:#fff;font-family:var(--font-display);font-weight:700;font-size:13px;cursor:pointer; }
+  /* ── OI BADGE ── */
+  .oi-badge { font-size:10px;padding:2px 7px;border-radius:4px;font-weight:700;font-family:var(--font-display); }
+  .oi-vh { background:#E1F5EE;color:#085041; }
+  .oi-h  { background:#EAF3DE;color:#27500A; }
+  .oi-m  { background:#FAEEDA;color:#633806; }
+  .oi-l  { background:#E6F1FB;color:#0C447C; }
+  .oi-vl { background:#F1EFE8;color:#444441; }
+  /* ── USER BADGE ── */
+  .user-badge { font-size:11px;color:var(--text3);background:var(--bg3);border:1px solid var(--border);padding:3px 8px;border-radius:20px;font-family:var(--font-display);font-weight:600; }
+  .signout-btn { font-size:11px;color:var(--text3);background:none;border:1px solid var(--border2);border-radius:20px;padding:4px 9px;cursor:pointer;font-family:var(--font-display);font-weight:600;transition:all 0.15s; }
+  .signout-btn:hover { color:var(--red);border-color:var(--red); }
+  .capital-btn { font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer;font-family:var(--font-display);font-weight:600;padding:0;text-decoration:underline; }
 </style>
 </head>
 <body>
@@ -972,16 +1011,22 @@
 
   <!-- HEADER -->
   <div class="hdr">
-    <div class="logo">Paper<span>Trade</span></div>
-    <div style="display:flex;align-items:center;gap:10px;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="logo">Paper<span>Trade</span></div>
+      <span class="user-badge" id="user-badge" style="display:none;"></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:7px;">
       <div class="theme-switcher" title="Change theme">
-        <button class="theme-btn active" id="th-warmgray" onclick="setTheme('warmgray')" title="Warm Gray (default)" style="background:#FAFAFA;box-shadow:0 0 0 1px rgba(0,0,0,0.18);"></button>
-        <button class="theme-btn" id="th-coolgray" onclick="setTheme('coolgray')" title="Soft Cool Gray" style="background:#ECEFF1;box-shadow:0 0 0 1px rgba(0,0,0,0.13);"></button>
-        <button class="theme-btn" id="th-cream" onclick="setTheme('cream')" title="Cream / Paper Beige" style="background:#FDFBF7;box-shadow:0 0 0 1px rgba(80,60,20,0.18);"></button>
-        <button class="theme-btn" id="th-dark" onclick="setTheme('dark')" title="Dark Near-Black" style="background:#111111;"></button>
-        <button class="theme-btn" id="th-oatmeal" onclick="setTheme('oatmeal')" title="Warm Oatmeal / Taupe" style="background:#F2EDE8;box-shadow:0 0 0 1px rgba(90,65,40,0.2);"></button>
+        <button class="theme-btn active" id="th-warmgray" onclick="setTheme('warmgray')" title="Warm Gray" style="background:#FAFAFA;box-shadow:0 0 0 1px rgba(0,0,0,0.18);"></button>
+        <button class="theme-btn" id="th-coolgray" onclick="setTheme('coolgray')" title="Cool Gray" style="background:#ECEFF1;box-shadow:0 0 0 1px rgba(0,0,0,0.13);"></button>
+        <button class="theme-btn" id="th-cream" onclick="setTheme('cream')" title="Cream" style="background:#FDFBF7;box-shadow:0 0 0 1px rgba(80,60,20,0.18);"></button>
+        <button class="theme-btn" id="th-dark" onclick="setTheme('dark')" title="Dark" style="background:#111111;"></button>
+        <button class="theme-btn" id="th-oatmeal" onclick="setTheme('oatmeal')" title="Oatmeal" style="background:#F2EDE8;box-shadow:0 0 0 1px rgba(90,65,40,0.2);"></button>
       </div>
-      <div class="cash-pill" id="cash-pill">$10,000.00</div>
+      <button class="capital-btn" id="capital-btn" onclick="openCapModal()" style="display:none;" title="Change capital">
+        <span id="cash-pill">$10,000.00</span>
+      </button>
+      <button class="signout-btn" id="signout-btn" onclick="signOut()" style="display:none;">Sign out</button>
     </div>
   </div>
 
@@ -1021,10 +1066,13 @@
 
     <!-- SIGNALS -->
     <div class="sec" id="tab-signals">
-      <div class="disc">AI exit analysis for your open positions based on today's price action.</div>
-      <div class="divider">Long positions — close signals <span class="g-pill pill">LONG</span></div>
+      <div class="disc">Momentum exit signals for AI picks &amp; your open positions.</div>
+      <div class="rbar"><span></span><button class="rfbtn" onclick="loadSignals()">↻ Refresh</button></div>
+      <div class="divider">AI picks — close signals <span class="g-pill pill">LONG</span></div>
+      <div id="sig-aipicks"><div class="lrow"><div class="spin"></div>Loading...</div></div>
+      <div class="divider" style="margin-top:4px;">Your longs — close signals <span class="g-pill pill">LONG</span></div>
       <div id="sig-long"><div class="empty">No long positions yet.</div></div>
-      <div class="divider" style="margin-top:4px;">Short positions — buy-back signals <span class="r-pill pill">SHORT</span></div>
+      <div class="divider" style="margin-top:4px;">Your shorts — buy-back signals <span class="r-pill pill">SHORT</span></div>
       <div id="sig-short"><div class="empty">No short positions yet.</div></div>
     </div>
 
@@ -1136,6 +1184,42 @@
       <div class="nlb">History</div>
     </div>
   </nav>
+
+
+  <!-- AUTH OVERLAY -->
+  <div class="auth-overlay" id="auth-overlay">
+    <div class="auth-logo">Paper<span>Trade</span></div>
+    <div class="auth-tag">AI-powered day trading simulator</div>
+    <div class="auth-box">
+      <div class="auth-tabs">
+        <button class="auth-tab on" id="atab-login" onclick="authTab('login')">Sign in</button>
+        <button class="auth-tab" id="atab-register" onclick="authTab('register')">Register</button>
+      </div>
+      <label class="auth-lbl">Username</label>
+      <input class="auth-inp" id="auth-user" type="text" placeholder="your username" autocapitalize="none" autocomplete="username"/>
+      <label class="auth-lbl">Password</label>
+      <input class="auth-inp" id="auth-pass" type="password" placeholder="••••••••" autocomplete="current-password"/>
+      <div id="auth-capital-row" style="display:none;">
+        <label class="auth-lbl">Starting capital ($)</label>
+        <input class="auth-inp" id="auth-capital" type="number" placeholder="10000" min="100" value="10000"/>
+      </div>
+      <button class="auth-btn" id="auth-submit" onclick="doAuth()">Sign in</button>
+      <div class="auth-err" id="auth-err"></div>
+      <div class="auth-hint" id="auth-hint">Loading...</div>
+    </div>
+  </div>
+
+  <!-- CAPITAL MODAL -->
+  <div class="cap-modal" id="cap-modal">
+    <div class="cap-box">
+      <div class="cap-title">Change starting capital</div>
+      <input class="cap-inp" id="cap-inp" type="number" min="100" placeholder="10000"/>
+      <div class="cap-row">
+        <button class="cap-cancel" onclick="document.getElementById('cap-modal').classList.remove('on')">Cancel</button>
+        <button class="cap-save" onclick="saveCapital()">Save</button>
+      </div>
+    </div>
+  </div>
 
 </div><!-- end app -->
 
@@ -1309,7 +1393,38 @@ async function loadSignals() {
   var so = Object.keys(shortPos).filter(function(s){ return shortPos[s] && shortPos[s].qty > 0; });
   var lel = document.getElementById('sig-long');
   var sel = document.getElementById('sig-short');
+  var ael = document.getElementById('sig-aipicks');
 
+  // ── AI picks signals section ──
+  var allPicks = (buyRecs || []).concat(shortRecs || []);
+  if (!allPicks.length) {
+    ael.innerHTML = '<div class="empty">Load AI Picks first, then check back here.</div>';
+  } else {
+    var ahtml = '';
+    for (var a=0; a<allPicks.length; a++) {
+      var r = allPicks[a];
+      var p = prices[r.sym];
+      var pct = p ? ((p.pct>=0?'+':'')+p.pct.toFixed(2)+'%') : '';
+      var pc = p ? (p.pct >= 0 ? 'pos' : 'neg') : '';
+      var isBuy = buyRecs && buyRecs.some(function(b){ return b.sym === r.sym; });
+      var action = isBuy ? (p && p.pct < -1.5 ? 'CLOSE' : 'HOLD') : (p && p.pct > 1.5 ? 'COVER' : 'HOLD');
+      var ac = action === 'CLOSE' ? 'g-pill' : action === 'COVER' ? 'b-pill' : 'y-pill';
+      var reason = isBuy
+        ? (action === 'CLOSE' ? r.sym + ' is reversing down ' + pct + ' — consider exiting this long pick.' : r.sym + ' buy signal still valid at ' + pct + ' today.')
+        : (action === 'COVER' ? r.sym + ' is recovering up ' + pct + ' — consider covering this short pick.' : r.sym + ' short signal still active at ' + pct + ' today.');
+      var tag = isBuy ? '<span class="long-tag">BUY PICK</span>' : '<span class="short-tag">SHORT PICK</span>';
+      var actionLabel = action === 'CLOSE' ? 'Exit long' : action === 'COVER' ? 'Cover short' : 'Hold';
+      ahtml += '<div class="card" onclick="openMod(this.dataset.sym)" data-sym="' + r.sym + '">';
+      ahtml += '<div class="card-row"><div><div class="csym">' + r.sym + tag + '</div>';
+      ahtml += '<div class="cname">' + getName(r.sym) + '</div></div>';
+      ahtml += '<div class="cprice">' + (p ? fmtPrice(p.price, r.sym) : 'N/A') + (pct ? '<br><span class="chg ' + pc + '">' + pct + '</span>' : '') + '</div></div>';
+      ahtml += '<div class="reason">' + reason + '</div>';
+      ahtml += '<div class="sig-row">' + oiPill(r.sym) + '<span style="flex:1;"></span><span class="pill ' + ac + '">' + actionLabel + '</span></div></div>';
+    }
+    ael.innerHTML = ahtml;
+  }
+
+  // ── Long positions ──
   if (!lo.length) {
     lel.innerHTML = '<div class="empty">No long positions yet.<br>Buy some stocks first.</div>';
   } else {
@@ -1330,11 +1445,12 @@ async function loadSignals() {
       lhtml += '<div class="card-row"><div><div class="csym">' + s + '<span class="long-tag">LONG</span></div>';
       lhtml += '<div class="cname">' + longs[s] + ' shares</div></div><div>' + chgHtml + '</div></div>';
       lhtml += '<div class="reason">' + reason + '</div>';
-      lhtml += '<div class="sig-row"><span class="pill ' + ac + '">' + actionLabel + '</span></div></div>';
+      lhtml += '<div class="sig-row">' + oiPill(s) + '<span style="flex:1;"></span><span class="pill ' + ac + '">' + actionLabel + '</span></div></div>';
     }
     lel.innerHTML = lhtml;
   }
 
+  // ── Short positions ──
   if (!so.length) {
     sel.innerHTML = '<div class="empty">No short positions yet.</div>';
   } else {
@@ -1357,7 +1473,7 @@ async function loadSignals() {
       shtml += '<div class="cname">' + sp.qty + ' @ $' + sp.entryPrice.toFixed(2) + '</div></div>';
       shtml += '<div class="cprice" style="' + pnlColor + '">' + pnlStr + '</div></div>';
       shtml += '<div class="reason">' + sreason + '</div>';
-      shtml += '<div class="sig-row"><span class="pill ' + sac + '">' + sactionLabel + '</span></div></div>';
+      shtml += '<div class="sig-row">' + oiPill(sym) + '<span style="flex:1;"></span><span class="pill ' + sac + '">' + sactionLabel + '</span></div></div>';
     }
     sel.innerHTML = shtml;
   }
@@ -1485,7 +1601,7 @@ function updateStats() {
   const sv = Object.keys(shortPos).filter(s => shortPos[s]?.qty > 0).reduce((a, s) => {
     const sp = shortPos[s]; return a + sp.qty * (sp.entryPrice - (prices[s]?.price || sp.entryPrice));
   }, 0);
-  const pnl = (cash + lv + sv) - 10000;
+  const pnl = (cash + lv + sv) - capital;
   document.getElementById('s-total').textContent = '$' + Math.round(cash + lv).toLocaleString();
   document.getElementById('s-long').textContent = '$' + Math.round(lv).toLocaleString();
   document.getElementById('s-short').textContent = (sv >= 0 ? '+' : '') + '$' + Math.abs(Math.round(sv)).toLocaleString();
@@ -1606,6 +1722,7 @@ async function loadChart(range, btn) {
 
 // ─── THEME SWITCHER ────────────────────────────────────────
 function setTheme(name) {
+  currentTheme = name;
   const root = document.documentElement;
   if (name === 'warmgray') { root.removeAttribute('data-theme'); }
   else { root.setAttribute('data-theme', name); }
@@ -1613,6 +1730,7 @@ function setTheme(name) {
   const btn = document.getElementById('th-' + name);
   if (btn) btn.classList.add('active');
   try { localStorage.setItem('pt-theme', name); } catch(e) {}
+  if (currentUser) saveUserData();
   if (chartInst) {
     const activeRangeBtn = document.querySelector('.crb.on');
     const curRange = activeRangeBtn ? activeRangeBtn.textContent.toLowerCase() : '1d';
@@ -1667,7 +1785,7 @@ function exec() {
     tradeHistory.push({ sym, type: 'cover', qty, price: p, total, date: new Date().toLocaleDateString() });
     toast('Covered ' + qty + ' ' + sym.replace('-USD', '') + ' P&L: ' + (pnl >= 0 ? '+' : '') + '$' + pnl.toFixed(2));
   }
-  updateStats(); updatePosBadge(); closeMod();
+  updateStats(); updatePosBadge(); saveUserData(); closeMod();
 }
 
 function closeMod(e) {
@@ -1696,14 +1814,151 @@ si.addEventListener('input', () => {
 document.addEventListener('click', e => { if (!e.target.closest('#sinput') && !e.target.closest('#sdrop')) sd.style.display = 'none'; });
 async function pickS(sym) { si.value = ''; sd.style.display = 'none'; openMod(sym); }
 
+// ═══════════════════════════════════════════════════════
+// AUTH & USER SYSTEM
+// ═══════════════════════════════════════════════════════
+
+let currentUser = null;
+let capital = 10000;
+let currentTheme = 'warmgray';
+
+function getUsers() {
+  try { return JSON.parse(localStorage.getItem('pt_users') || '{}'); } catch { return {}; }
+}
+function saveUsers(u) { try { localStorage.setItem('pt_users', JSON.stringify(u)); } catch {} }
+
+function loadUserData(username) {
+  try {
+    const raw = localStorage.getItem('pt_user_' + username);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return { cash: 10000, capital: 10000, longs: {}, shortPos: {}, tradeHistory: [], theme: 'warmgray' };
+}
+
+function saveUserData() {
+  if (!currentUser) return;
+  try {
+    localStorage.setItem('pt_user_' + currentUser, JSON.stringify({
+      cash, capital, longs, shortPos, tradeHistory, theme: currentTheme
+    }));
+  } catch {}
+}
+
+function authTab(t) {
+  document.getElementById('atab-login').classList.toggle('on', t === 'login');
+  document.getElementById('atab-register').classList.toggle('on', t === 'register');
+  document.getElementById('auth-submit').textContent = t === 'login' ? 'Sign in' : 'Create account';
+  document.getElementById('auth-capital-row').style.display = t === 'register' ? 'block' : 'none';
+  document.getElementById('auth-err').textContent = '';
+}
+
+function doAuth() {
+  const isLogin = document.getElementById('atab-login').classList.contains('on');
+  const username = document.getElementById('auth-user').value.trim().toLowerCase();
+  const password = document.getElementById('auth-pass').value;
+  const errEl = document.getElementById('auth-err');
+  errEl.textContent = '';
+  if (!username || username.length < 3) { errEl.textContent = 'Username must be at least 3 characters.'; return; }
+  if (!password || password.length < 4) { errEl.textContent = 'Password must be at least 4 characters.'; return; }
+  const users = getUsers();
+  if (!isLogin) {
+    if (users[username]) { errEl.textContent = 'Username already taken.'; return; }
+    const startCap = parseFloat(document.getElementById('auth-capital').value) || 10000;
+    users[username] = { pw: btoa(password), created: Date.now() };
+    saveUsers(users);
+    const d = loadUserData(username);
+    d.cash = startCap; d.capital = startCap;
+    localStorage.setItem('pt_user_' + username, JSON.stringify(d));
+  } else {
+    if (!users[username]) { errEl.textContent = 'User not found.'; return; }
+    if (users[username].pw !== btoa(password)) { errEl.textContent = 'Incorrect password.'; return; }
+  }
+  loginUser(username);
+}
+
+function loginUser(username) {
+  currentUser = username;
+  const d = loadUserData(username);
+  cash = d.cash !== undefined ? d.cash : 10000;
+  capital = d.capital !== undefined ? d.capital : 10000;
+  longs = d.longs || {};
+  shortPos = d.shortPos || {};
+  tradeHistory = d.tradeHistory || d.history || [];
+  currentTheme = d.theme || 'warmgray';
+  localStorage.setItem('pt_session', username);
+  document.getElementById('auth-overlay').style.display = 'none';
+  document.getElementById('user-badge').textContent = username;
+  document.getElementById('user-badge').style.display = '';
+  document.getElementById('signout-btn').style.display = '';
+  document.getElementById('capital-btn').style.display = '';
+  setTheme(currentTheme);
+  updateStats();
+  updateAuthHint();
+}
+
+function signOut() {
+  saveUserData();
+  currentUser = null;
+  cash = 10000; capital = 10000; longs = {}; shortPos = {}; tradeHistory = [];
+  localStorage.removeItem('pt_session');
+  document.getElementById('auth-overlay').style.display = 'flex';
+  document.getElementById('user-badge').style.display = 'none';
+  document.getElementById('signout-btn').style.display = 'none';
+  document.getElementById('capital-btn').style.display = 'none';
+  document.getElementById('auth-user').value = '';
+  document.getElementById('auth-pass').value = '';
+  document.getElementById('auth-err').textContent = '';
+}
+
+function updateAuthHint() {
+  const count = Object.keys(getUsers()).length;
+  const el = document.getElementById('auth-hint');
+  if (el) el.textContent = count === 0
+    ? 'Be the first — create an account above'
+    : count + ' trader' + (count !== 1 ? 's' : '') + ' registered · Data saved in this browser';
+}
+
+function openCapModal() {
+  document.getElementById('cap-inp').value = capital;
+  document.getElementById('cap-modal').classList.add('on');
+}
+
+function saveCapital() {
+  const val = parseFloat(document.getElementById('cap-inp').value);
+  if (!val || val < 100) return;
+  capital = val;
+  saveUserData();
+  updateStats();
+  document.getElementById('cap-modal').classList.remove('on');
+  toast('Capital updated to $' + val.toLocaleString());
+}
+
+function getOITier(sym) {
+  const high = ['AAPL','MSFT','TSLA','AMZN','GOOGL','NVDA','META'];
+  const med  = ['NFLX','AMD','INTC','JPM','V','CRM','PYPL','UBER','BABA','PLTR','COIN','DIS','SPOT'];
+  if (high.includes(sym)) return 'High';
+  if (med.includes(sym))  return 'Medium';
+  return 'Low';
+}
+
+function oiPill(sym) {
+  const tier = getOITier(sym);
+  const cls = tier === 'High' ? 'oi-vh' : tier === 'Medium' ? 'oi-m' : 'oi-l';
+  return '<span class="oi-badge ' + cls + '">' + tier + ' OI</span>';
+}
+
 // ─── INIT ──────────────────────────────────────────────────
 async function init() {
   try {
     const saved = localStorage.getItem('pt-theme');
-    if (saved && saved !== 'warmgray') setTheme(saved);
+    if (saved && saved !== 'warmgray') { currentTheme = saved; setTheme(saved); }
   } catch(e) {}
-  fetchAll().then(() => { renderMarket(); updateStats(); });
-  loadAIPicks();
+  updateAuthHint();
+  const session = localStorage.getItem('pt_session');
+  if (session && getUsers()[session]) {
+    loginUser(session);
+  }
+  fetchAll().then(() => { renderMarket(); updateStats(); loadAIPicks(); });
 }
 
 init();
