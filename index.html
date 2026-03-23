@@ -13,80 +13,109 @@
     --green: #1a7a4a; --red: #c0243a; --accent: #3d35c8; --radius: 10px;
     --font-display: 'Syne', sans-serif; --font-mono: 'Space Mono', monospace;
   }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-mono); font-size: 13px; overflow-x: hidden; padding-bottom: 80px; }
   
-  /* Navigation Bar Styling */
-  .nav {
-    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
-    width: 100%; max-width: 420px; display: flex;
-    border-top: 1px solid var(--border); background: var(--bg2); z-index: 50;
-  }
-  .nit { flex: 1; padding: 10px 0 8px; text-align: center; cursor: pointer; }
-  .nic { font-size: 16px; margin-bottom: 3px; color: var(--text3); }
-  .nlb { font-size: 9px; color: var(--text3); font-family: var(--font-display); font-weight: 600; text-transform: uppercase; }
-  .nit.on .nic, .nit.on .nlb { color: var(--green); }
+  /* Header & Stats */
+  .hdr { padding: 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: var(--bg); z-index: 10; }
+  .logo { font-family: var(--font-display); font-size: 20px; font-weight: 800; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--border); border-bottom: 1px solid var(--border); }
+  .st { background: var(--bg); padding: 12px 8px; border-right: 1px solid var(--border); }
+  .stl { font-size: 9px; color: var(--text3); text-transform: uppercase; margin-bottom: 4px; font-weight: 700; }
+  .stv { font-size: 11px; font-weight: 700; }
+  .pos { color: var(--green); } .neg { color: var(--red); }
 
-  /* Tab Visibility */
-  .sec { display: none; padding: 14px; }
+  /* Content Sections */
+  .sec { display: none; padding: 16px; }
   .sec.on { display: block; }
-  
-  /* Rest of your styles... */
-  body { background: var(--bg); color: var(--text); font-family: var(--font-mono); }
-  .app { max-width: 420px; margin: 0 auto; min-height: 100vh; position: relative; }
+  h2 { font-family: var(--font-display); font-size: 18px; margin-bottom: 16px; }
+
+  /* Navigation Bar (Fixed Bottom) */
+  .nav { position: fixed; bottom: 0; width: 100%; max-width: 420px; left: 50%; transform: translateX(-50%); display: flex; background: var(--bg2); border-top: 1px solid var(--border); z-index: 100; padding: 8px 0; }
+  .nit { flex: 1; text-align: center; cursor: pointer; color: var(--text3); }
+  .nit.on { color: var(--green); }
+  .nic { font-size: 18px; display: block; }
+  .nlb { font-size: 9px; font-weight: 700; text-transform: uppercase; }
+
+  /* Cards */
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; cursor: pointer; }
+  .csym { font-weight: 800; font-size: 15px; font-family: var(--font-display); }
 </style>
 </head>
 <body>
 
-<div class="app">
-  <div class="stats" id="stats-bar">
-    <div class="st"><div class="stl">Equity</div><div id="stat-equity" class="stv">$10,000.00</div></div>
-    <div class="st"><div class="stl">P&L</div><div id="stat-pnl" class="stv">$0.00</div></div>
-    <div class="st"><div class="stl">Cash</div><div id="stat-cash" class="stv">$10,000.00</div></div>
-  </div>
-
-  <div class="content">
-    <div id="tab-ai" class="sec on"><h2>AI Picks</h2><div id="ai-list"></div></div>
-    <div id="tab-crypto" class="sec"><h2>Crypto Market</h2><div id="crypto-list"></div></div>
-    <div id="tab-market" class="sec"><h2>Stock Market</h2><div id="market-list"></div></div>
-    <div id="tab-portfolio" class="sec"><h2>My Portfolio</h2><div id="port-list"></div></div>
-    <div id="tab-history" class="sec"><h2>Trade History</h2><div id="hist-list"></div></div>
-  </div>
-
-  <nav class="nav">
-    <div class="nit on" onclick="sw('ai')">
-      <div class="nic">★</div><div class="nlb">AI Picks</div>
-    </div>
-    <div class="nit" onclick="sw('crypto')">
-      <div class="nic">◈</div><div class="nlb">Crypto</div>
-    </div>
-    <div class="nit" onclick="sw('market')">
-      <div class="nic">▦</div><div class="nlb">Market</div>
-    </div>
-    <div class="nit" onclick="sw('portfolio')">
-      <div class="nic">◆</div><div class="nlb">Portfolio</div>
-    </div>
-    <div class="nit" onclick="sw('history')">
-      <div class="nic">↺</div><div class="nlb">History</div>
-    </div>
-  </nav>
+<div class="hdr">
+  <div class="logo">PaperTrade</div>
+  <div id="user-badge" style="font-size:10px; background:var(--bg3); padding:4px 10px; border-radius:15px;">Live Data</div>
 </div>
 
+<div class="stats">
+  <div class="st"><div class="stl">Equity</div><div id="stat-equity" class="stv">$10,000.00</div></div>
+  <div class="st"><div class="stl">P&L</div><div id="stat-pnl" class="stv">$0.00</div></div>
+  <div class="st"><div class="stl">Perf</div><div id="stat-pct" class="stv">0.00%</div></div>
+  <div class="st"><div class="stl">Cash</div><div id="stat-cash" class="stv">$10,000.00</div></div>
+</div>
+
+<div class="content">
+  <div id="tab-ai" class="sec on"><h2>AI Picks</h2><div id="ai-list"></div></div>
+  <div id="tab-crypto" class="sec"><h2>Crypto</h2><div id="crypto-list"></div></div>
+  <div id="tab-market" class="sec"><h2>Market</h2><div id="market-list"></div></div>
+  <div id="tab-port" class="sec"><h2>Portfolio</h2><div id="port-list"></div></div>
+  <div id="tab-hist" class="sec"><h2>History</h2><div id="hist-list"></div></div>
+</div>
+
+<nav class="nav">
+  <div class="nit on" onclick="sw('ai')"><span class="nic">★</span><span class="nlb">AI Picks</span></div>
+  <div class="nit" onclick="sw('crypto')"><span class="nic">◈</span><span class="nlb">Crypto</span></div>
+  <div class="nit" onclick="sw('market')"><span class="nic">▦</span><span class="nlb">Market</span></div>
+  <div class="nit" onclick="sw('port')"><span class="nic">◆</span><span class="nlb">Portfolio</span></div>
+  <div class="nit" onclick="sw('hist')"><span class="nic">↺</span><span class="nlb">History</span></div>
+</nav>
+
 <script>
-// Switch between the 5 tabs
+let cash = 10000, capital = 10000, longs = {}, tradeHistory = [];
+let prices = {"AAPL": 185.50, "NVDA": 820.10, "BTC": 65200.00, "ETH": 3500.00};
+
 function sw(t) {
   document.querySelectorAll('.sec').forEach(s => s.classList.remove('on'));
   document.querySelectorAll('.nit').forEach(n => n.classList.remove('on'));
-  
-  const targetSec = document.getElementById('tab-' + t);
-  if (targetSec) targetSec.classList.add('on');
-  
-  // Find the clicked nav item and highlight it
+  document.getElementById('tab-' + t).classList.add('on');
   event.currentTarget.classList.add('on');
+  if(t === 'port') renderPortfolio();
 }
 
-// Initial Stats Update
 function updateStats() {
-  // Add your logic here to calculate Equity and P&L
+  let mv = 0;
+  for (let s in longs) { mv += (prices[s] || 0) * longs[s]; }
+  const eq = cash + mv;
+  const pnl = eq - capital;
+  const pct = (pnl / capital) * 100;
+
+  document.getElementById('stat-equity').textContent = '$' + eq.toLocaleString(undefined, {minimumFractionDigits:2});
+  document.getElementById('stat-cash').textContent = '$' + cash.toLocaleString(undefined, {minimumFractionDigits:2});
+  
+  const pnlEl = document.getElementById('stat-pnl');
+  pnlEl.textContent = (pnl >= 0 ? '+' : '') + '$' + pnl.toLocaleString(undefined, {minimumFractionDigits:2});
+  pnlEl.className = 'stv ' + (pnl >= 0 ? 'pos' : 'neg');
+
+  const pctEl = document.getElementById('stat-pct');
+  pctEl.textContent = (pnl >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+  pctEl.className = 'stv ' + (pnl >= 0 ? 'pos' : 'neg');
 }
+
+function renderPortfolio() {
+  const el = document.getElementById('port-list');
+  let html = '';
+  for (let s in longs) {
+    if (longs[s] > 0) {
+      html += `<div class="card"><div class="csym">${s}</div><div>${longs[s]} Shares @ $${prices[s]}</div></div>`;
+    }
+  }
+  el.innerHTML = html || '<p style="color:#999">No open positions.</p>';
+}
+
+// Initial Run
+updateStats();
 </script>
 </body>
 </html>
