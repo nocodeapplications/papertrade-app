@@ -1669,16 +1669,21 @@ function renderHistory() {
     const trades = tradeHistory.filter(t => t.type === 'buy' || t.type === 'sell' || t.type === 'short' || t.type === 'cover').length;
     const lv = Object.keys(longs).filter(s => longs[s] > 0).reduce((a, s) => a + (prices[s]?.price || 0) * longs[s], 0);
     const sv = Object.keys(shortPos).filter(s => shortPos[s]?.qty > 0).reduce((a, s) => { const sp = shortPos[s]; return a + sp.qty * (sp.entryPrice - (prices[s]?.price || sp.entryPrice)); }, 0);
-    const netPnL = (cash + lv + sv) - capital;
+    const netPnL = (cash + lv) + sv - capital;
+    var pnlColor = netPnL >= 0 ? 'var(--green)' : 'var(--red)';
+    var pnlStr = (netPnL >= 0 ? '+$' : '-$') + Math.abs(netPnL).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    var portfolioVal = (cash + lv).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
     sumEl.innerHTML =
-      '<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">' +
-      '<div><div style="font-size:10px;color:var(--text3);font-family:var(--font-display);font-weight:600;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:3px;">Current capital</div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:12px;padding-bottom:4px;">' +
+      '<div style="min-width:110px;"><div style="font-size:10px;color:var(--text3);font-family:var(--font-display);font-weight:600;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:3px;">Starting capital</div>' +
       '<div style="font-size:14px;font-weight:700;font-family:var(--font-mono);color:var(--text);">$' + capital.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + '</div></div>' +
-      '<div><div style="font-size:10px;color:var(--text3);font-family:var(--font-display);font-weight:600;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:3px;">Cash available</div>' +
+      '<div style="min-width:110px;"><div style="font-size:10px;color:var(--text3);font-family:var(--font-display);font-weight:600;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:3px;">Cash available</div>' +
       '<div style="font-size:14px;font-weight:700;font-family:var(--font-mono);color:var(--text);">$' + cash.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + '</div></div>' +
-      '<div><div style="font-size:10px;color:var(--text3);font-family:var(--font-display);font-weight:600;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:3px;">Net P&L</div>' +
-      '<div style="font-size:14px;font-weight:700;font-family:var(--font-mono);color:' + (netPnL >= 0 ? 'var(--green)' : 'var(--red)') + ';">' + (netPnL >= 0 ? '+$' : '-$') + Math.abs(netPnL).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) + '</div></div>' +
-      '<div><div style="font-size:10px;color:var(--text3);font-family:var(--font-display);font-weight:600;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:3px;">Total trades</div>' +
+      '<div style="min-width:110px;"><div style="font-size:10px;color:var(--text3);font-family:var(--font-display);font-weight:600;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:3px;">Portfolio value</div>' +
+      '<div style="font-size:14px;font-weight:700;font-family:var(--font-mono);color:var(--text);">$' + portfolioVal + '</div></div>' +
+      '<div style="min-width:110px;"><div style="font-size:10px;color:var(--text3);font-family:var(--font-display);font-weight:600;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:3px;">Net P&amp;L</div>' +
+      '<div style="font-size:14px;font-weight:700;font-family:var(--font-mono);color:' + pnlColor + ';">' + pnlStr + '</div></div>' +
+      '<div style="min-width:80px;"><div style="font-size:10px;color:var(--text3);font-family:var(--font-display);font-weight:600;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:3px;">Trades</div>' +
       '<div style="font-size:14px;font-weight:700;font-family:var(--font-mono);color:var(--text);">' + trades + '</div></div>' +
       '</div>';
   }
@@ -1718,18 +1723,25 @@ function renderHistory() {
 }
 
 function updateStats() {
-  const lv = Object.keys(longs).filter(s => longs[s] > 0).reduce((a, s) => a + (prices[s]?.price || 0) * longs[s], 0);
-  const sv = Object.keys(shortPos).filter(s => shortPos[s]?.qty > 0).reduce((a, s) => {
-    const sp = shortPos[s]; return a + sp.qty * (sp.entryPrice - (prices[s]?.price || sp.entryPrice));
-  }, 0);
-  const pnl = (cash + lv + sv) - capital;
-  document.getElementById('s-total').textContent = '$' + (cash + lv + sv).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
-  document.getElementById('s-long').textContent = '$' + lv.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
-  document.getElementById('s-short').textContent = (sv >= 0 ? '+$' : '-$') + Math.abs(sv).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
-  const pe = document.getElementById('s-pnl');
-  pe.textContent = (pnl >= 0 ? '+$' : '-$') + Math.abs(pnl).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  var lv = Object.keys(longs).filter(function(s){ return longs[s] > 0; })
+    .reduce(function(a,s){ return a + (prices[s] ? prices[s].price : 0) * longs[s]; }, 0);
+  var sv = Object.keys(shortPos).filter(function(s){ return shortPos[s] && shortPos[s].qty > 0; })
+    .reduce(function(a,s){
+      var sp = shortPos[s];
+      return a + sp.qty * (sp.entryPrice - (prices[s] ? prices[s].price : sp.entryPrice));
+    }, 0);
+  // Total portfolio value = cash in hand + current value of long positions + short P&L
+  var portfolioValue = cash + lv;
+  // P&L = portfolio value vs starting capital (net of deposits/withdrawals)
+  var pnl = portfolioValue + sv - capital;
+
+  document.getElementById('s-total').textContent = '$' + portfolioValue.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('s-long').textContent = '$' + lv.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('s-short').textContent = (sv >= 0 ? '+$' : '-$') + Math.abs(sv).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  var pe = document.getElementById('s-pnl');
+  pe.textContent = (pnl >= 0 ? '+$' : '-$') + Math.abs(pnl).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   pe.className = 'stv ' + (pnl >= 0 ? 'pos' : 'neg');
-  document.getElementById('cash-pill').textContent = '$' + cash.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  document.getElementById('cash-pill').textContent = '$' + cash.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
 
 function getName(sym) { return UNIVERSE.find(x => x.sym === sym)?.name || sym; }
@@ -1765,7 +1777,7 @@ function sw(tab) {
   if (tab === 'portfolio') renderPortfolio();
   if (tab === 'history') renderHistory();
   if (tab === 'market') renderMarket();
-  if (tab === 'signals') loadSignals();
+  if (tab === 'signals') { if (!buyRecs || !buyRecs.length) { loadAIPicks().then(function(){ loadSignals(); }); } else { loadSignals(); } }
   if (tab === 'crypto' && !cryptoRecs.length) loadCrypto();
 }
 
@@ -2023,6 +2035,58 @@ async function pickS(sym) {
     UNIVERSE.push({ sym: sym, name: sym });
   }
   openMod(sym);
+}
+
+// ─── CAPITAL MODAL ────────────────────────────────────────
+function openCapModal() {
+  document.getElementById('cap-inp').value = capital;
+  document.getElementById('cap-modal').classList.add('on');
+}
+
+function saveCapital() {
+  var val = parseFloat(document.getElementById('cap-inp').value);
+  if (!val || val < 100) return;
+  var oldCapital = capital;
+  var diff = val - oldCapital;
+  var amountUsed = oldCapital - cash;
+  var newCash = Math.max(0, val - amountUsed);
+
+  if (Math.abs(diff) > 0.01) {
+    tradeHistory.push({
+      type: diff > 0 ? 'deposit' : 'withdrawal',
+      amount: diff,
+      oldCapital: oldCapital,
+      newCapital: val,
+      date: new Date().toLocaleDateString(),
+      time: new Date().toLocaleTimeString()
+    });
+  }
+
+  capital = val;
+  cash = newCash;
+  saveUserData();
+  updateStats();
+  if (document.getElementById('hist-list')) renderHistory();
+  document.getElementById('cap-modal').classList.remove('on');
+  var changeStr = diff > 0
+    ? 'Deposited +$' + diff.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})
+    : 'Withdrew -$' + Math.abs(diff).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  toast(changeStr + ' · Capital now $' + val.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}));
+}
+
+// ─── OI TIER HELPER ───────────────────────────────────────
+function getOITier(sym) {
+  var high = ['AAPL','MSFT','TSLA','AMZN','GOOGL','NVDA','META','SPY','QQQ','GLD'];
+  var med  = ['NFLX','AMD','INTC','JPM','V','CRM','PYPL','UBER','BABA','PLTR','COIN','DIS','SPOT','GS','BAC','XOM','WMT'];
+  if (high.indexOf(sym) >= 0) return 'High';
+  if (med.indexOf(sym) >= 0) return 'Medium';
+  return 'Low';
+}
+
+function oiPill(sym) {
+  var tier = getOITier(sym);
+  var cls = tier === 'High' ? 'oi-vh' : tier === 'Medium' ? 'oi-m' : 'oi-l';
+  return '<span class="oi-badge ' + cls + '">' + tier + ' OI</span>';
 }
 
 // ═══════════════════════════════════════════════════════
